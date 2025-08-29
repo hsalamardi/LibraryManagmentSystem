@@ -1,68 +1,492 @@
 <!DOCTYPE html>
-{% load  static %}
+{% load static %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="{% static 'images/logo.png' %}"/>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-    <title>Welcome to NTA Library</title>
-</head>
-<body >
-    <dev class="container">
-      <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <a class="navbar-brand" href="#"> <img src="/static/images/logo.png" width="150" height="80" alt=""> </a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-      
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-          <ul class="navbar-nav mr-auto">
-            <li class="nav-item active">
-              <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/bookslist/">Books</a>
-            </li>
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                Login/Register
-              </a>
-              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                <a class="dropdown-item" href="/library_users/register">Register NOW!</a>
-                {% if user.is_authenticated %}
-                <a class="dropdown-item" href="/library_users/logout"> hi "{{request.user}}" Logout?</a>
-                {%else%}
-                <a class="dropdown-item" href="/library_users/login">Login!</a>
-                {% endif %}
-                <div class="dropdown-divider"></div>
-                <a class="dropdown-item" href="/library_users/contact">Contact Librarian </a>
-              </div>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link disabled" href="/admin">Admin</a>
-            </li>
-          </ul>
-          <form class="form-inline my-2 my-lg-0 " action="{% url 'books:search_results' %}" method="get">
-            <input class="form-control mr-sm-2" name="q" type="text" placeholder="Search...">
-            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
-          </form>
-        </div>
-      </nav>
-    </dev>
-
-    <dev class="container">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/mystyle.css' %}">
+    
+    <title>{% block title %}NTA Library - Your Gateway to Knowledge{% endblock %}</title>
+    
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary-color: #f59e0b;
+            --accent-color: #10b981;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --bg-light: #f8fafc;
+            --bg-white: #ffffff;
+            --border-color: #e5e7eb;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
         
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .navbar {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .navbar-brand img {
+            transition: transform 0.3s ease;
+        }
+        
+        .navbar-brand:hover img {
+            transform: scale(1.05);
+        }
+        
+        .nav-link {
+            font-weight: 500;
+            color: var(--text-primary) !important;
+            transition: color 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            color: var(--primary-color) !important;
+        }
+        
+        .btn-search {
+            background: var(--primary-color);
+            border: none;
+            border-radius: 8px;
+            padding: 8px 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-search:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .search-form {
+            position: relative;
+        }
+        
+        .search-input {
+            border-radius: 8px;
+            border: 2px solid var(--border-color);
+            padding: 8px 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .search-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .hero-section {
+            background: var(--bg-white);
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            margin: 2rem 0;
+        }
+        
+        .hero-content {
+            padding: 3rem;
+        }
+        
+        .hero-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+        
+        .stats-card {
+            background: var(--bg-white);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: var(--shadow-md);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .stats-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.5rem;
+            color: white;
+        }
+        
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .stats-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        .feature-card {
+            background: var(--bg-white);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: var(--shadow-md);
+            transition: transform 0.3s ease;
+            border: 1px solid var(--border-color);
+            height: 100%;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-3px);
+        }
+        
+        .feature-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2rem;
+            color: white;
+        }
+        
+        .btn-primary-custom {
+            background: var(--primary-color);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary-custom:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .footer {
+            background: var(--text-primary);
+            color: white;
+            padding: 3rem 0 2rem;
+            margin-top: 4rem;
+        }
+        
+        .dropdown-menu {
+            border-radius: 12px;
+            border: none;
+            box-shadow: var(--shadow-lg);
+            padding: 0.5rem;
+        }
+        
+        .dropdown-item {
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            transition: background-color 0.3s ease;
+        }
+        
+        .dropdown-item:hover {
+            background-color: var(--bg-light);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <img src="{% static 'images/logo.png' %}" width="120" height="60" alt="NTA Library" class="d-inline-block align-top">
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/"><i class="fas fa-home me-1"></i>Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'books:view_books_list' %}"><i class="fas fa-book me-1"></i>Books</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'books:barcode_scan' %}"><i class="fas fa-barcode me-1"></i>Scanner</a>
+                    </li>
+                    {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'books:dashboard' %}"><i class="fas fa-chart-bar me-1"></i>Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'books:my_books' %}"><i class="fas fa-user-books me-1"></i>My Books</a>
+                    </li>
+                    {% endif %}
+                </ul>
+                
+                <!-- Search Form -->
+                <form class="d-flex me-3 search-form" action="{% url 'books:search_results' %}" method="get">
+                    <div class="input-group">
+                        <input class="form-control search-input" name="q" type="text" placeholder="Search books, authors..." aria-label="Search">
+                        <button class="btn btn-primary btn-search" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- User Menu -->
+                <div class="dropdown">
+                    <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        {% if user.is_authenticated %}
+                            <i class="fas fa-user me-1"></i>{{ user.username|title }}
+                        {% else %}
+                            <i class="fas fa-sign-in-alt me-1"></i>Account
+                        {% endif %}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        {% if user.is_authenticated %}
+                            <li><a class="dropdown-item" href="{% url 'books:my_books' %}"><i class="fas fa-book-reader me-2"></i>My Books</a></li>
+                            <li><a class="dropdown-item" href="/library_users/profile"><i class="fas fa-user-edit me-2"></i>Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/library_users/logout"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        {% else %}
+                            <li><a class="dropdown-item" href="/library_users/login"><i class="fas fa-sign-in-alt me-2"></i>Login</a></li>
+                            <li><a class="dropdown-item" href="/library_users/register"><i class="fas fa-user-plus me-2"></i>Register</a></li>
+                        {% endif %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/library_users/contact"><i class="fas fa-envelope me-2"></i>Contact</a></li>
+                        {% if user.is_staff %}
+                            <li><a class="dropdown-item" href="/admin"><i class="fas fa-cog me-2"></i>Admin</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
 
-            {% block body_block %}
-            <dev class="container">
-            <img src={%static "images/reading.jpg"%} class="img-fluid" alt="Responsive image">
-            </dev>
-            {% endblock  %}
-    </dev>
+    <!-- Main Content -->
+    <main style="padding-top: 100px;">
+        {% block body_block %}
+        <div class="container">
+            <!-- Hero Section -->
+            <div class="hero-section">
+                <div class="row align-items-center">
+                    <div class="col-lg-6 hero-content">
+                        <h1 class="hero-title">Welcome to NTA Library</h1>
+                        <p class="hero-subtitle">Your gateway to knowledge, discovery, and endless learning opportunities. Explore our vast collection of books, digital resources, and innovative services.</p>
+                        <div class="d-flex gap-3 flex-wrap">
+                            <a href="{% url 'books:view_books_list' %}" class="btn btn-primary-custom">
+                                <i class="fas fa-book me-2"></i>Browse Books
+                            </a>
+                            <a href="{% url 'books:barcode_scan' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-barcode me-2"></i>Quick Scan
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <img src="{% static 'images/reading.jpg' %}" class="img-fluid rounded-3 shadow" alt="Library Reading">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Section -->
+            <div class="row g-4 my-5">
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="stats-number">{{ total_books|default:"1,250" }}</div>
+                        <div class="stats-label">Total Books</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                            <i class="fas fa-book-open"></i>
+                        </div>
+                        <div class="stats-number">{{ available_books|default:"980" }}</div>
+                        <div class="stats-label">Available Now</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stats-number">{{ total_users|default:"450" }}</div>
+                        <div class="stats-label">Active Members</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                            <i class="fas fa-bookmark"></i>
+                        </div>
+                        <div class="stats-number">{{ borrowed_books|default:"270" }}</div>
+                        <div class="stats-label">Books Borrowed</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Section -->
+            <div class="row g-4 my-5">
+                <div class="col-12">
+                    <h2 class="text-center mb-5" style="font-family: 'Playfair Display', serif; font-weight: 600;">Library Features</h2>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card">
+                        <div class="feature-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <h4>Advanced Search</h4>
+                        <p class="text-muted">Find books quickly with our powerful search engine. Filter by author, genre, availability, and more.</p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card">
+                        <div class="feature-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                            <i class="fas fa-barcode"></i>
+                        </div>
+                        <h4>Barcode Scanning</h4>
+                        <p class="text-muted">Quick book identification and checkout using our advanced barcode scanning technology.</p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card">
+                        <div class="feature-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <h4>Reservation System</h4>
+                        <p class="text-muted">Reserve books in advance and get notified when they become available for pickup.</p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card">
+                        <div class="feature-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <h4>Smart Notifications</h4>
+                        <p class="text-muted">Receive timely reminders for due dates, reservations, and new book arrivals.</p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card">
+                        <div class="feature-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h4>Reading Analytics</h4>
+                        <p class="text-muted">Track your reading progress and discover new books based on your preferences.</p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card">
+                        <div class="feature-icon" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <h4>Mobile Friendly</h4>
+                        <p class="text-muted">Access your library account anywhere, anytime with our responsive mobile interface.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 mb-4">
+                    <h5 class="mb-3">NTA Library</h5>
+                    <p class="text-light">Empowering minds through knowledge and fostering a love for learning in our community.</p>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="text-light"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-light"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-light"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-light"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h6 class="mb-3">Quick Links</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="{% url 'books:view_books_list' %}" class="text-light text-decoration-none">Browse Books</a></li>
+                        <li><a href="{% url 'books:barcode_scan' %}" class="text-light text-decoration-none">Barcode Scanner</a></li>
+                        <li><a href="{% url 'books:dashboard' %}" class="text-light text-decoration-none">Dashboard</a></li>
+                        <li><a href="/library_users/contact" class="text-light text-decoration-none">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h6 class="mb-3">Services</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-light text-decoration-none">Book Borrowing</a></li>
+                        <li><a href="#" class="text-light text-decoration-none">Reservations</a></li>
+                        <li><a href="#" class="text-light text-decoration-none">Digital Resources</a></li>
+                        <li><a href="#" class="text-light text-decoration-none">Research Help</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-4 mb-4">
+                    <h6 class="mb-3">Contact Info</h6>
+                    <p class="text-light mb-2"><i class="fas fa-map-marker-alt me-2"></i>123 Library Street, City, State 12345</p>
+                    <p class="text-light mb-2"><i class="fas fa-phone me-2"></i>+1 (555) 123-4567</p>
+                    <p class="text-light mb-2"><i class="fas fa-envelope me-2"></i>info@ntalibrary.edu</p>
+                </div>
+            </div>
+            <hr class="my-4" style="border-color: #6b7280;">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="text-light mb-0">&copy; 2025 NTA Library. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="text-light mb-0">Built with <i class="fas fa-heart text-danger"></i> for education</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

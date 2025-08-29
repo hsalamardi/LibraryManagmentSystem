@@ -35,6 +35,7 @@ class Book(models.Model):
     shelf = models.CharField(max_length=20, help_text="Shelf location")
     title = models.CharField(max_length=500, help_text="Book title")
     isbn = models.CharField(max_length=17, unique=True, null=True, blank=True, help_text="ISBN-13 format")
+    barcode = models.CharField(max_length=50, unique=True, null=True, blank=True, help_text="Barcode for scanning")
     author = models.CharField(max_length=500, help_text="Primary author(s)")
     
     # Publication Details
@@ -64,6 +65,7 @@ class Book(models.Model):
     cover_type = models.CharField(max_length=20, choices=COVER_TYPE_CHOICES, default='paperback')
     condition = models.CharField(max_length=20, choices=CONDITION_CHOICES, default='good')
     copy_number = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
+    cover_image = models.ImageField(upload_to='book_covers/', null=True, blank=True, help_text="Book cover image")
     
     # Content
     book_summary = models.TextField(null=True, blank=True)
@@ -77,6 +79,17 @@ class Book(models.Model):
 
     def __str__(self):
         return self.title
+    
+    def get_cover_image_url(self):
+        """Return cover image URL or default placeholder"""
+        if self.cover_image and hasattr(self.cover_image, 'url'):
+            return self.cover_image.url
+        return '/static/images/default_book_cover.svg'
+    
+    @property
+    def has_cover_image(self):
+        """Check if book has a cover image"""
+        return bool(self.cover_image)
     
     class Meta:
         ordering = ['title']

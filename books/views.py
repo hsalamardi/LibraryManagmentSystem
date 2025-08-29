@@ -10,7 +10,9 @@ from django.core.paginator import Paginator
 from datetime import date, timedelta
 from .models import Book, Borrower, BookReservation
 from library_users.models import UserProfileinfo
-from .forms import NewBook_form, NewBorrower_form
+from .forms import NewBook_form, NewBorrower_form, BarcodeScanForm
+from .email_notifications import EmailNotificationService
+from .tasks import send_welcome_email, send_return_confirmation, send_reservation_available_notification
 
 
 # Create your views here.
@@ -61,6 +63,7 @@ class BooksListView(ListView):
                 Q(title__icontains=search_query) |
                 Q(author__icontains=search_query) |
                 Q(isbn__icontains=search_query) |
+                Q(barcode__icontains=search_query) |
                 Q(keywords__icontains=search_query)
             )
         
@@ -148,6 +151,7 @@ class SearchResultsView(ListView):
                 Q(title__icontains=query) |
                 Q(author__icontains=query) |
                 Q(isbn__icontains=query) |
+                Q(barcode__icontains=query) |
                 Q(keywords__icontains=query)
             ).distinct()
         return Book.objects.none()
@@ -222,6 +226,35 @@ def return_book(request, borrowing_id):
     borrowing.borrower.current_books_count -= 1
     borrowing.borrower.save()
     
+    # Send return confirmation email
+    try:
+        send_return_confirmation.delay(borrowing.id)
+    except Exception as e:
+        # Log error but don't fail the return process
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to queue return confirmation email: {str(e)}")
+    
+    # Check for reservations and notify users
+    active_reservations = BookReservation.objects.filter(
+        book=borrowing.book,
+        status='active'
+    ).order_by('reservation_date')
+    
+    if active_reservations.exists():
+        # Fulfill the first reservation
+        first_reservation = active_reservations.first()
+        first_reservation.status = 'fulfilled'
+        first_reservation.save()
+        
+        # Send notification to the user
+        try:
+            send_reservation_available_notification.delay(first_reservation.id)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to queue reservation notification: {str(e)}")
+    
     messages.success(request, f'You have successfully returned "{borrowing.book.title}".')
     return redirect('books:book_detail', pk=borrowing.book.pk)
 
@@ -280,4 +313,111 @@ def my_books(request):
     }
     
     return render(request, 'books/my_books.html', context)
+
+
+@login_required
+def barcode_scan(request):
+    """Barcode scanning interface for quick book operations"""
+    form = BarcodeScanForm()
+    book = None
+    error_message = None
+    
+    if request.method == 'POST':
+        form = BarcodeScanForm(request.POST)
+        if form.is_valid():
+            barcode = form.cleaned_data['barcode']
+            try:
+                book = Book.objects.get(barcode=barcode)
+            except Book.DoesNotExist:
+                error_message = f"No book found with barcode: {barcode}"
+    
+    context = {
+        'form': form,
+        'book': book,
+        'error_message': error_message,
+    }
+    
+    return render(request, 'books/barcode_scan.html', context)
+
+
+@login_required
+def barcode_lookup_api(request):
+    """API endpoint for barcode lookup"""
+    if request.method == 'GET':
+        barcode = request.GET.get('barcode')
+        if barcode:
+            try:
+                book = Book.objects.get(barcode=barcode)
+                data = {
+                    'success': True,
+                    'book': {
+                        'id': book.id,
+                        'title': book.title,
+                        'author': book.author,
+                        'isbn': book.isbn,
+                        'barcode': book.barcode,
+                        'is_available': book.is_available,
+                        'cover_image_url': book.get_cover_image_url(),
+                    }
+                }
+            except Book.DoesNotExist:
+                data = {
+                    'success': False,
+                    'error': f'No book found with barcode: {barcode}'
+                }
+        else:
+            data = {
+                'success': False,
+                'error': 'Barcode parameter is required'
+            }
+        
+        return JsonResponse(data)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+@login_required
+def quick_borrow(request, book_id):
+    """Quick borrow functionality for barcode scanning"""
+    book = get_object_or_404(Book, id=book_id)
+    
+    if not book.is_available:
+        messages.error(request, f'Book "{book.title}" is not available for borrowing.')
+        return redirect('books:barcode_scan')
+    
+    # Get or create user profile
+    user_profile, created = UserProfileinfo.objects.get_or_create(
+        user=request.user,
+        defaults={'status': 'active'}
+    )
+    
+    # Create borrowing record
+    due_date = date.today() + timedelta(days=14)  # 2 weeks borrowing period
+    
+    borrowing = Borrower.objects.create(
+        book=book,
+        borrower=user_profile,
+        due_date=due_date,
+        status='borrowed'
+    )
+    
+    # Update book availability
+    book.is_available = False
+    book.save()
+    
+    # Send confirmation email
+    try:
+        send_return_confirmation.delay(
+            user_email=request.user.email,
+            user_name=request.user.get_full_name() or request.user.username,
+            book_title=book.title,
+            book_author=book.author,
+            due_date=due_date.strftime('%Y-%m-%d')
+        )
+    except Exception as e:
+        # Log error but don't fail the borrowing process
+        print(f"Email notification error: {e}")
+    
+    messages.success(request, f'Successfully borrowed "{book.title}". Due date: {due_date.strftime("%B %d, %Y")}')
+    return redirect('books:barcode_scan')
 

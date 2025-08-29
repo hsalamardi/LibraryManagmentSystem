@@ -9,14 +9,16 @@ class NewBook_form(forms.ModelForm):
     class Meta:
         model = Book
         fields = [
-            'serial', 'shelf', 'title', 'isbn', 'author', 'publisher',
+            'serial', 'shelf', 'title', 'isbn', 'barcode', 'author', 'publisher',
             'publication_date', 'edition', 'pages', 'language', 'dewey_code',
             'volume', 'series', 'editor', 'translator', 'place_of_publication',
             'website', 'source', 'cover_type', 'condition', 'copy_number',
-            'book_summary', 'contents', 'keywords'
+            'cover_image', 'book_summary', 'contents', 'keywords'
         ]
         widgets = {
             'publication_date': forms.DateInput(attrs={'type': 'date'}),
+            'barcode': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Scan or enter barcode', 'id': 'barcode-input'}),
+            'cover_image': forms.ClearableFileInput(attrs={'accept': 'image/*', 'class': 'form-control'}),
             'book_summary': forms.Textarea(attrs={'rows': 4}),
             'contents': forms.Textarea(attrs={'rows': 4}),
             'keywords': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Enter keywords separated by commas'}),
@@ -37,6 +39,31 @@ class NewBook_form(forms.ModelForm):
         if pub_date and pub_date > date.today():
             raise ValidationError('Publication date cannot be in the future.')
         return pub_date
+    
+    def clean_barcode(self):
+        barcode = self.cleaned_data.get('barcode')
+        if barcode:
+            # Remove any spaces or special characters
+            barcode = ''.join(filter(str.isalnum, barcode))
+            if len(barcode) < 8:
+                raise ValidationError('Barcode must be at least 8 characters long.')
+            if len(barcode) > 50:
+                raise ValidationError('Barcode cannot exceed 50 characters.')
+        return barcode
+    
+    def clean_cover_image(self):
+        cover_image = self.cleaned_data.get('cover_image')
+        if cover_image:
+            # Check file size (max 5MB)
+            if cover_image.size > 5 * 1024 * 1024:
+                raise ValidationError('Image file size must be less than 5MB.')
+            
+            # Check file type
+            allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+            if cover_image.content_type not in allowed_types:
+                raise ValidationError('Only JPEG, PNG, GIF, and WebP images are allowed.')
+        
+        return cover_image
 
 
 class NewBorrower_form(forms.ModelForm):
@@ -76,7 +103,7 @@ class BookSearchForm(forms.Form):
         max_length=255,
         required=False,
         widget=forms.TextInput(attrs={
-            'placeholder': 'Search by title, author, ISBN, or keywords...',
+            'placeholder': 'Search by title, author, ISBN, barcode, or keywords...',
             'class': 'form-control'
         })
     )
@@ -109,4 +136,25 @@ class ReturnBookForm(forms.Form):
             'placeholder': 'Optional return notes (condition, issues, etc.)...'
         })
     )
+
+
+class BarcodeScanForm(forms.Form):
+    barcode = forms.CharField(
+        max_length=50,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Scan or enter barcode',
+            'id': 'barcode-scan-input',
+            'autocomplete': 'off'
+        })
+    )
+    
+    def clean_barcode(self):
+        barcode = self.cleaned_data.get('barcode')
+        if barcode:
+            # Remove any spaces or special characters
+            barcode = ''.join(filter(str.isalnum, barcode))
+            if len(barcode) < 8:
+                raise ValidationError('Barcode must be at least 8 characters long.')
+        return barcode
 

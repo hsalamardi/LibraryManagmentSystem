@@ -132,6 +132,82 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_CREDENTIALS = True
 
+# Email Configuration
+EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = env('EMAIL_PORT', default=587)
+EMAIL_USE_TLS = env('EMAIL_USE_TLS', default=True)
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@library.com')
+
+# Library Configuration
+LIBRARY_NAME = env('LIBRARY_NAME', default='NTA Library')
+LIBRARY_EMAIL = env('LIBRARY_EMAIL', default='library@nta.edu')
+LIBRARY_PHONE = env('LIBRARY_PHONE', default='+1234567890')
+LIBRARY_ADDRESS = env('LIBRARY_ADDRESS', default='123 Library Street, City, State 12345')
+
+# Fine Configuration
+DAILY_FINE_AMOUNT = float(env('DAILY_FINE_AMOUNT', default=1.00))
+MAX_FINE_AMOUNT = float(env('MAX_FINE_AMOUNT', default=50.00))
+BORROWING_PERIOD_DAYS = int(env('BORROWING_PERIOD_DAYS', default=14))
+RESERVATION_PERIOD_DAYS = int(env('RESERVATION_PERIOD_DAYS', default=7))
+
+# Notification Configuration
+SEND_EMAIL_NOTIFICATIONS = env('SEND_EMAIL_NOTIFICATIONS', default=True)
+SEND_SMS_NOTIFICATIONS = env('SEND_SMS_NOTIFICATIONS', default=False)
+REMINDER_DAYS_BEFORE_DUE = int(env('REMINDER_DAYS_BEFORE_DUE', default=3))
+
+# Celery Configuration
+CELERY_BROKER_URL = env('REDIS_URL', default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = env('REDIS_URL', default='redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+# Logging Configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'library.log'),
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'loggers': {
+        'books': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'library_users': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
+
 ROOT_URLCONF = 'nta_library.urls'
 
 TEMPLATES = [
@@ -163,16 +239,25 @@ WSGI_APPLICATION = 'nta_library.wsgi.application'
 #    }
 #}
 
+# Database configuration - using SQLite for testing
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'database',
-        'USER': 'db_user',
-        'PASSWORD': 'password',
-        'HOST':'localhost',
-        'PORT':'3306',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# Uncomment below for MySQL production setup
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'database',
+#         'USER': 'db_user',
+#         'PASSWORD': 'password',
+#         'HOST':'localhost',
+#         'PORT':'3306',
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators

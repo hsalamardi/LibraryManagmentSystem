@@ -23,6 +23,11 @@ urlpatterns = [
     # User's books
     path('my-books/', views.my_books, name='my_books'),
     
+    # Barcode scanning
+    path('barcode-scan/', views.barcode_scan, name='barcode_scan'),
+    path('api/barcode-lookup/', views.barcode_lookup_api, name='barcode_lookup_api'),
+    path('books/<int:book_id>/quick-borrow/', views.quick_borrow, name='quick_borrow'),
+    
     # Dashboard and Reports
     path('dashboard/', dashboard_views.DashboardView.as_view(), name='dashboard'),
     path('reports/', dashboard_views.reports_view, name='reports'),

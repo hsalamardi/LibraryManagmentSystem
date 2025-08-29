@@ -25,7 +25,7 @@ urlpatterns = [
     path('', include('books.urls',namespace='Books')),
     path('', include('library_users.urls',namespace='Library')),
     path('admin', admin.site.urls),
-    path('forest', include('django_forest.urls')),
+    # path('forest', include('django_forest.urls')),  # Commented out - missing dependency
 ]
 
 admin.site.site_header = settings.ADMIN_SITE_HEADER
