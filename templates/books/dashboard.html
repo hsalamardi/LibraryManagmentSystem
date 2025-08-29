@@ -1,0 +1,288 @@
+{% extends 'library_users/base.html' %}
+{% load static %}
+
+{% block title %}Library Dashboard{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css" rel="stylesheet">
+<style>
+    .dashboard-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .stat-card {
+        text-align: center;
+        padding: 20px;
+        border-radius: 8px;
+        color: white;
+        margin-bottom: 20px;
+    }
+    .stat-card.primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .stat-card.success { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+    .stat-card.info { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+    .stat-card.warning { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+    .stat-number { font-size: 2.5rem; font-weight: bold; }
+    .stat-label { font-size: 0.9rem; opacity: 0.9; }
+    .chart-container { position: relative; height: 300px; }
+    .table-responsive { max-height: 400px; overflow-y: auto; }
+    .overdue { color: #dc3545; font-weight: bold; }
+    .due-soon { color: #ffc107; font-weight: bold; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">📊 Library Dashboard</h1>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="stat-card primary">
+                <div class="stat-number">{{ book_stats.total_books }}</div>
+                <div class="stat-label">Total Books</div>
+                <small>{{ book_stats.available_books }} Available</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card success">
+                <div class="stat-number">{{ user_stats.active_users }}</div>
+                <div class="stat-label">Active Users</div>
+                <small>{{ user_stats.users_with_books }} Currently Borrowing</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card info">
+                <div class="stat-number">{{ borrowing_stats.active_borrowings }}</div>
+                <div class="stat-label">Active Borrowings</div>
+                <small>{{ borrowing_stats.overdue_borrowings }} Overdue</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card warning">
+                <div class="stat-number">{{ reservation_stats.active_reservations }}</div>
+                <div class="stat-label">Active Reservations</div>
+                <small>{{ reservation_stats.fulfilled_reservations }} Fulfilled This Month</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="dashboard-card">
+                <h5>📈 Monthly Borrowings Trend</h5>
+                <div class="chart-container">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="dashboard-card">
+                <h5>🌍 Books by Language</h5>
+                <div class="chart-container">
+                    <canvas id="languageChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Tables Row -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="dashboard-card">
+                <h5>📚 Popular Books</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Author</th>
+                                <th>Borrows</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for book in popular_books %}
+                            <tr>
+                                <td><a href="{% url 'books:book_detail' book.pk %}">{{ book.title|truncatechars:30 }}</a></td>
+                                <td>{{ book.author|truncatechars:20 }}</td>
+                                <td><span class="badge bg-primary">{{ book.borrow_count }}</span></td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" class="text-muted">No borrowing data available</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="dashboard-card">
+                <h5>⚠️ Overdue Books</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Book</th>
+                                <th>Borrower</th>
+                                <th>Days Overdue</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for borrowing in overdue_books %}
+                            <tr>
+                                <td><a href="{% url 'books:book_detail' borrowing.book.pk %}">{{ borrowing.book.title|truncatechars:25 }}</a></td>
+                                <td>{{ borrowing.borrower.user.get_full_name|truncatechars:20 }}</td>
+                                <td><span class="badge bg-danger">{{ borrowing.days_overdue }} days</span></td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" class="text-success">No overdue books! 🎉</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Books Due Soon -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="dashboard-card">
+                <h5>📅 Books Due Soon (Next 3 Days)</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Book</th>
+                                <th>Borrower</th>
+                                <th>Due Date</th>
+                                <th>Contact</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for borrowing in books_due_soon %}
+                            <tr>
+                                <td><a href="{% url 'books:book_detail' borrowing.book.pk %}">{{ borrowing.book.title|truncatechars:30 }}</a></td>
+                                <td>{{ borrowing.borrower.user.get_full_name }}</td>
+                                <td><span class="due-soon">{{ borrowing.due_date }}</span></td>
+                                <td>{{ borrowing.borrower.user.email }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="sendReminder({{ borrowing.id }})">
+                                        📧 Send Reminder
+                                    </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="5" class="text-muted">No books due soon</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="dashboard-card">
+                <h5>🚀 Quick Actions</h5>
+                <div class="btn-group" role="group">
+                    <a href="{% url 'books:add_a_book' %}" class="btn btn-primary">📖 Add New Book</a>
+                    <a href="{% url 'books:view_books_list' %}" class="btn btn-outline-primary">📚 Browse Books</a>
+                    <a href="#" class="btn btn-outline-success" onclick="generateReport()">📊 Generate Report</a>
+                    <a href="#" class="btn btn-outline-warning" onclick="exportData()">📤 Export Data</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+// Monthly Borrowings Chart
+const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+const monthlyChart = new Chart(monthlyCtx, {
+    type: 'line',
+    data: {
+        labels: {{ chart_data.monthly_borrowings|safe }}.map(item => item.month),
+        datasets: [{
+            label: 'Borrowings',
+            data: {{ chart_data.monthly_borrowings|safe }}.map(item => item.borrowings),
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1
+        }, {
+            label: 'Returns',
+            data: {{ chart_data.monthly_borrowings|safe }}.map(item => item.returns),
+            borderColor: 'rgb(255, 99, 132)',
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Language Distribution Chart
+const languageCtx = document.getElementById('languageChart').getContext('2d');
+const languageChart = new Chart(languageCtx, {
+    type: 'doughnut',
+    data: {
+        labels: {{ chart_data.books_by_language|safe }}.map(item => item.language),
+        datasets: [{
+            data: {{ chart_data.books_by_language|safe }}.map(item => item.count),
+            backgroundColor: [
+                '#FF6384',
+                '#36A2EB',
+                '#FFCE56',
+                '#4BC0C0',
+                '#9966FF'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+// JavaScript functions
+function sendReminder(borrowingId) {
+    // Implementation for sending reminder emails
+    alert('Reminder sent! (Feature to be implemented)');
+}
+
+function generateReport() {
+    // Implementation for generating reports
+    window.open('/books/reports/', '_blank');
+}
+
+function exportData() {
+    // Implementation for data export
+    alert('Export feature coming soon!');
+}
+
+// Auto-refresh dashboard every 5 minutes
+setInterval(function() {
+    location.reload();
+}, 300000);
+</script>
+{% endblock %}

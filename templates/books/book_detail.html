@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+    {% extends 'landing_page.html' %}
+        {% block  body_block%}
+        
+        <body>
+            <div class="container">
+                <div class="jumbotron" id="intro" class="bg-image vh-100 shadow-1-strong"> 
+                <!-- style=" background: linear-gradient(
+                  45deg,
+                  rgba(29, 236, 197, 0.7),
+                  rgba(91, 14, 214, 0.7) 100%
+                );>
+                    <video style="min-width: 100%; min-height: 100%;" playsinline autoplay muted loop>
+                      <source class="h-100" src="#" type="video/mp4" />
+                    </video>>
+                -->
+                    <h1 class="display-4">Welcome to NTA Library!</h1>
+                    <p class="lead">This is a simple hero unit, a simple jumbotron-style component for calling extra attention to featured content or information.</p>
+                    <hr class="my-4">
+                     <P>  It uses utility classes for typography and spacing to space content out within the larger container.</p>
+                    <p class="lead">
+                    <a class="btn btn-danger btn-lg" href= {% url 'books:add_a_book' %}  role="button">Register a  new Book</a>
+                    <a class="btn btn-danger btn-lg" href= {% url 'books:view_books_list' %}  role="button">View Books List</a>
+                    <a class="btn btn-danger  btn-lg" href= {% url 'admin:index' %}  role="button">Go to admin Area</a>
+                    <a class="btn btn-danger btn-lg" href= '/'  role="button">Go to Homepage</a>
+                </dev>
+            </dev>
+
+           
+
+            							
+            							 	
+            							
+		
+                    <div class="row no-gutters">
+                        <h3 class="alert alert-info" role="alert">This part contains details about the book:- </h3>
+                             <P class="col-6"> <strong> Book Serial: </strong> {{book_detail.serial}}</p>  
+                             <P class="col-6"> <strong> Book shelve: </strong> {{book_detail.shelve}}</p> 
+                             <P class="col-6"> <strong> Book Title: </strong> {{book_detail.Title}}</p>   
+                             <P class="col-6"> <strong> Book type: </strong> {{book_detail.type}}</p>  
+                             <P class="col-6"> <strong> Book borrowing: </strong> {{book_detail.borrowing}}</p> 
+                             <P class="col-6"> <strong> Book Dewey_Code: </strong> {{book_detail.Dewey_Code}}</p>
+                             <P class="col-6">  <strong> Book Copy: </strong>  {{book_detail.Copy}}</p> 
+                             <P class="col-6">  <strong> Book ISBN: </strong>  {{book_detail.ISBN}}</p> 
+                             <P class="col-6">  <strong> Book Author: </strong>  {{book_detail.Author}}</p> 
+                             <P class="col-6">  <strong> Book Edition: </strong>  {{book_detail.Edition}}</p> 
+                             <P class="col-6">  <strong> Book Publisher: </strong>  {{book_detail.Publisher}}</p> 
+                             <P class="col-6">  <strong> Book Pages: </strong>  {{book_detail.Pages}}</p> 
+                             <P class="col-6">  <strong> Book Volume: </strong>  {{book_detail.Volume}}</p> 
+                             <P class="col-6">  <strong> Book Series: </strong>  {{book_detail.Series}}</p> 
+                             <P class="col-6">  <strong> Book Publisher: </strong>  {{book_detail.Publisher}}</p>
+                             <P class="col-6">  <strong> Book website: </strong>  {{book_detail.website}}</p> 
+                             <P class="col-6">  <strong> Book Place_of_Publication: </strong>  {{book_detail.Place_of_Publication}}</p>  
+                             <P class="col-6">  <strong> Book Publication_Date: </strong>  {{book_detail.Publication_Date}}</p> 
+                             <P class="col-6">  <strong> Book Editor: </strong>  {{book_detail.Editor}}</p> 
+                             <P class="col-6">  <strong> Book Language: </strong>  {{book_detail.Language}}</p> 
+                             <P class="col-6">  <strong> Book Cover_Type: </strong>  {{book_detail.Cover_Type}}</p> 
+                             <P class="col-6">  <strong> Book Condition: </strong>  {{book_detail.Condition}}</p> 
+                             <P class="col-6">  <strong> Book Main_Class: </strong>  {{book_detail.Main_Class}}</p> 
+                             <P class="col-6">  <strong> Book Divisions: </strong>  {{book_detail.Divisions}}</p> 
+                             <P class="col-6">  <strong> Book Sections: </strong>  {{book_detail.Sections}}</p> 
+                             <P class="col-6">  <strong> Book Cutter_Author: </strong>  {{book_detail.Cutter_Author}}</p> 
+                             <P class="col-6">  <strong> Book Translator: </strong>  {{book_detail.Translator}}</p> 
+                             <P class="col-6"> <strong> Book Book Summary: </strong> {{book_detail.Book_Summary}}</p> 
+                             <P class="col-6">  <strong> Book Contents: </strong>  {{book_detail.Contents}}</p> 
+                             <P class="col-6">  <strong> Book Keywords: </strong>  {{book_detail.Keywords}}</p> 
+                    </dev>
+                    
+                    <div  class="container">
+
+                            {% if request.user.is_superuser  %}
+                            <h3 class="alert alert-danger" role="alert""col-12">This part can onlt be seen by Superusers:- </h3>
+
+                            {% for borrower in book_detail.book_borrower.all %}
+                    
+                            <P class="col-12">  Borrrower Name :  {{borrower.borrower_name}}</P>
+                            <P class="col-12">  Borrrower Dep. :  {{borrower.department}}</P>
+                            <P class="col-12">  Boorow Date :  {{borrower.borrow_date}}</P>
+                            <P class="col-12">  Return Date :  {{borrower.return_date}}</P>
+                            <P class="col-12">  Is Borrower Blaclisted :  {{borrower.blacklisted}}</P>
+                            {% endfor %}
+                            {% else %}
+                            {% endif %}
+                     </div>
+            </body>
+        {% endblock  %}
