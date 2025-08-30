@@ -26,7 +26,7 @@ steps:
     # CORRECTED: This now correctly lists the NAMES of the secrets to remove.
     # This is needed to transition them from secret-references to plain-text env vars.
     - '--remove-secrets=SECRET_KEY,DATABASE_URL,EMAIL_HOST_PASSWORD,REDIS_URL'
-    - '--remove-env-vars=SECRET_KEY,DATABASE_URL,EMAIL_HOST_PASSWORD,REDIS_URL'
+    # - '--remove-env-vars=SECRET_KEY,DATABASE_URL,EMAIL_HOST_PASSWORD,REDIS_URL' # Commented out - conflicts with --set-env-vars
     # IMPROVED: Using a different delimiter (^) makes the command robust
     # and prevents errors from special characters in your variables.
     - '--set-env-vars=^--^DEBUG=False--SECRET_KEY=${_SECRET_KEY}--ALLOWED_HOSTS=${_ALLOWED_HOSTS}--DATABASE_URL=${_DATABASE_URL}--EMAIL_BACKEND=${_EMAIL_BACKEND}--EMAIL_HOST=${_EMAIL_HOST}--EMAIL_PORT=${_EMAIL_PORT}--EMAIL_USE_TLS=${_EMAIL_USE_TLS}--EMAIL_HOST_USER=${_EMAIL_HOST_USER}--EMAIL_HOST_PASSWORD=${_EMAIL_HOST_PASSWORD}--DEFAULT_FROM_EMAIL=${_DEFAULT_FROM_EMAIL}--LIBRARY_NAME=${_LIBRARY_NAME}--LIBRARY_EMAIL=${_LIBRARY_EMAIL}--LIBRARY_PHONE=${_LIBRARY_PHONE}--LIBRARY_ADDRESS=${_LIBRARY_ADDRESS}--DAILY_FINE_AMOUNT=${_DAILY_FINE_AMOUNT}--MAX_FINE_AMOUNT=${_MAX_FINE_AMOUNT}--BORROWING_PERIOD_DAYS=${_BORROWING_PERIOD_DAYS}--RESERVATION_PERIOD_DAYS=${_RESERVATION_PERIOD_DAYS}--REDIS_URL=${_REDIS_URL}'
