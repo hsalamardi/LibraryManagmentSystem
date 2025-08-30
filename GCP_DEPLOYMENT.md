@@ -115,6 +115,14 @@ Cloud Run automatically scales based on traffic. You can configure the minimum a
    ```
    - Do not use line breaks or spaces between variables
    - Make sure to escape special characters properly
+   - For `ALLOWED_HOSTS`, use space-separated domains instead of comma-separated:
+     ```yaml
+     _ALLOWED_HOSTS: 'domain1.com domain2.com'
+     ```
+     Instead of:
+     ```yaml
+     _ALLOWED_HOSTS: 'domain1.com,domain2.com'  # This will cause errors
+     ```
 4. **Build Failures with mysqlclient**: If you encounter errors related to mysqlclient installation (like missing pkg-config or MySQL libraries), this is already handled in the Dockerfile by installing the necessary system dependencies:
    ```
    default-libmysqlclient-dev

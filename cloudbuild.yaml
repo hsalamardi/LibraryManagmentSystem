@@ -42,7 +42,7 @@ images:
 # Substitution variables for environment variables
 substitutions:
   _SECRET_KEY: 'your-secret-key-here'
-  _ALLOWED_HOSTS: 'your-cloud-run-url.a.run.app,library.yourdomain.com'
+  _ALLOWED_HOSTS: 'your-cloud-run-url.a.run.app library.yourdomain.com'
   _DATABASE_URL: 'postgres://user:password@/dbname?host=/cloudsql/your-project:your-region:your-instance'
   _EMAIL_BACKEND: 'django.core.mail.backends.smtp.EmailBackend'
   _EMAIL_HOST: 'smtp.gmail.com'

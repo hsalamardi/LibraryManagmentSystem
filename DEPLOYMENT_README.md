@@ -65,6 +65,16 @@ When setting environment variables in `cloudbuild.yaml`, use the correct format:
 
 Do not use line breaks or spaces between variables. Make sure to escape special characters properly.
 
+**Special Note for ALLOWED_HOSTS:**
+Use space-separated domains instead of comma-separated to avoid parsing errors:
+```yaml
+_ALLOWED_HOSTS: 'domain1.com domain2.com'
+```
+Instead of:
+```yaml
+_ALLOWED_HOSTS: 'domain1.com,domain2.com'  # This will cause errors
+```
+
 ## Monitoring and Logging
 
 After deployment, you can monitor your application using Google Cloud Console:
