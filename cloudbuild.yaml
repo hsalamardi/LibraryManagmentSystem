@@ -2,6 +2,7 @@ steps:
 # Build the container image
 - name: 'gcr.io/cloud-builders/docker'
   args: ['build', '-t', 'gcr.io/$PROJECT_ID/library-management-system:$COMMIT_SHA', '.']
+  timeout: '1200s'  # 20 minutes timeout for build step
 
 # Push the container image to Container Registry
 - name: 'gcr.io/cloud-builders/docker'
@@ -43,6 +44,16 @@ steps:
     BORROWING_PERIOD_DAYS=${_BORROWING_PERIOD_DAYS},
     RESERVATION_PERIOD_DAYS=${_RESERVATION_PERIOD_DAYS},
     REDIS_URL=${_REDIS_URL}
+
+# Run database migrations
+- name: 'gcr.io/${PROJECT_ID}/${_SERVICE_NAME}:${SHORT_SHA}'
+  entrypoint: 'python'
+  args: ['manage.py', 'migrate', '--noinput']
+  env:
+  - 'DATABASE_URL=${_DATABASE_URL}'
+  - 'SECRET_KEY=${_SECRET_KEY}'
+  - 'DEBUG=False'
+  - 'ALLOWED_HOSTS=${_ALLOWED_HOSTS}'
 options:
   logging: CLOUD_LOGGING_ONLY
 # Store images in Google Container Registry
@@ -73,3 +84,6 @@ substitutions:
 
 # You can set these values in the Cloud Build trigger configuration
 # or override them when manually triggering a build
+
+# Set a timeout for the entire build process (30 minutes)
+timeout: '1800s'

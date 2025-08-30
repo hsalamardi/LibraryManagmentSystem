@@ -1,10 +1,12 @@
 # Core Django
 django>=4.2,<5.0
-django-environ
+django-environ>=0.10.0
 
 # Database
-mysqlclient
-psycopg2-binary
+# Note: mysqlclient requires system packages: default-libmysqlclient-dev, pkg-config, build-essential
+mysqlclient>=2.1.0
+psycopg2-binary>=2.9.5
+dj-database-url>=1.2.0
 
 # Forms and UI
 django-crispy-forms
