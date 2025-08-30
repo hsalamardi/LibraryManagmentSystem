@@ -2,23 +2,20 @@
 timeout: '1800s' # 30 minutes
 
 steps:
-# 1. Build the container image
+# 1. Build and push the container image
 - name: 'gcr.io/cloud-builders/docker'
-  id: 'Build'
-  args: ['build', '-t', 'gcr.io/$PROJECT_ID/library-management-system:$COMMIT_SHA', '.']
+  id: 'Build and Push'
+  args:
+    - 'build'
+    - '--tag=gcr.io/$PROJECT_ID/library-management-system:$COMMIT_SHA'
+    - '.'
+    - '--push=gcr.io/$PROJECT_ID/library-management-system:$COMMIT_SHA'
   timeout: '1200s'
 
-# 2. Push the container image to Google Container Registry
-- name: 'gcr.io/cloud-builders/docker'
-  id: 'Push'
-  args: ['push', 'gcr.io/$PROJECT_ID/library-management-system:$COMMIT_SHA']
-
-# 3. Deploy new revision to Cloud Run with NO traffic
-# This step safely stages the new version without making it live.
+# 2. Deploy the container to Cloud Run
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  id: 'Deploy Revision'
+  id: 'Deploy to Cloud Run'
   entrypoint: gcloud
-  # CORRECTED SECTION: Each argument is now a separate list item.
   args:
     - 'run'
     - 'deploy'
@@ -26,72 +23,36 @@ steps:
     - '--image=gcr.io/$PROJECT_ID/library-management-system:$COMMIT_SHA'
     - '--region=${_REGION}'
     - '--platform=managed'
-    # - '--no-traffic' # Commented out - allow traffic to new revision immediately
-    # - '--service-account=${_RUN_SERVICE_ACCOUNT}' # Commented out - using default service account
-    # - '--add-cloudsql-instances=${_CLOUD_SQL_INSTANCE_NAME}' # Commented out - not using Cloud SQL
-    # - '--vpc-connector=${_VPC_CONNECTOR_NAME}' # Commented out - not using VPC connector
-    # - '--set-secrets=SECRET_KEY=django-secret-key:latest,DATABASE_URL=db-connection-string:latest,EMAIL_HOST_PASSWORD=gmail-app-password:latest,REDIS_URL=redis-connection-string:latest' # Commented out - secrets not configured yet
-    - '--remove-secrets=ToQoNK7BG"}/I.1<<g^eqW}pD5$Qbz<oBS=_(B]$DZbRyKm[@"^`'
-    - '--set-env-vars=DEBUG=False,SECRET_KEY=${_SECRET_KEY},ALLOWED_HOSTS=${_ALLOWED_HOSTS},DATABASE_URL=${_DATABASE_URL},EMAIL_BACKEND=${_EMAIL_BACKEND},EMAIL_HOST=${_EMAIL_HOST},EMAIL_PORT=${_EMAIL_PORT},EMAIL_USE_TLS=${_EMAIL_USE_TLS},EMAIL_HOST_USER=${_EMAIL_HOST_USER},EMAIL_HOST_PASSWORD=${_EMAIL_HOST_PASSWORD},DEFAULT_FROM_EMAIL=${_DEFAULT_FROM_EMAIL},LIBRARY_NAME=${_LIBRARY_NAME},LIBRARY_EMAIL=${_LIBRARY_EMAIL},LIBRARY_PHONE=${_LIBRARY_PHONE},LIBRARY_ADDRESS=${_LIBRARY_ADDRESS},DAILY_FINE_AMOUNT=${_DAILY_FINE_AMOUNT},MAX_FINE_AMOUNT=${_MAX_FINE_AMOUNT},BORROWING_PERIOD_DAYS=${_BORROWING_PERIOD_DAYS},RESERVATION_PERIOD_DAYS=${_RESERVATION_PERIOD_DAYS},REDIS_URL=${_REDIS_URL}'
-# 4. Run database migrations using a Cloud Run Job
-# This runs migrations against the newly deployed (but not yet live) revision's environment.
-# The build will fail here if migrations fail, preventing a broken release.
-# COMMENTED OUT - Migration job not configured yet
-# - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-#   id: 'Migrate Database'
-#   entrypoint: gcloud
-#   args:
-#     - 'run'
-#     - 'jobs'
-#     - 'execute'
-#     - '${_MIGRATE_JOB_NAME}'
-#     - '--region=${_REGION}'
-#     - '--wait' # Wait for the migration to complete before proceeding
-
-# 5. Switch traffic to the new revision
-# This step only runs if the migration in the previous step was successful.
-# COMMENTED OUT - Manual traffic switching recommended for initial deployment
-# - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-#   id: 'Switch Traffic'
-#   entrypoint: gcloud
-#   args:
-#     - 'run'
-#     - 'services'
-#     - 'update-traffic'
-#     - 'library-management-system'
-#     - '--to-latest'
-#     - '--region=${_REGION}'
+    - '--allow-unauthenticated'
+    # CORRECTED: This now correctly lists the NAMES of the secrets to remove.
+    # This is needed to transition them from secret-references to plain-text env vars.
+    - '--remove-secrets=SECRET_KEY,DATABASE_URL,EMAIL_HOST_PASSWORD,REDIS_URL'
+    # IMPROVED: Using a different delimiter (^) makes the command robust
+    # and prevents errors from special characters in your variables.
+    - '--set-env-vars=^--^DEBUG=False--SECRET_KEY=${_SECRET_KEY}--ALLOWED_HOSTS=${_ALLOWED_HOSTS}--DATABASE_URL=${_DATABASE_URL}--EMAIL_BACKEND=${_EMAIL_BACKEND}--EMAIL_HOST=${_EMAIL_HOST}--EMAIL_PORT=${_EMAIL_PORT}--EMAIL_USE_TLS=${_EMAIL_USE_TLS}--EMAIL_HOST_USER=${_EMAIL_HOST_USER}--EMAIL_HOST_PASSWORD=${_EMAIL_HOST_PASSWORD}--DEFAULT_FROM_EMAIL=${_DEFAULT_FROM_EMAIL}--LIBRARY_NAME=${_LIBRARY_NAME}--LIBRARY_EMAIL=${_LIBRARY_EMAIL}--LIBRARY_PHONE=${_LIBRARY_PHONE}--LIBRARY_ADDRESS=${_LIBRARY_ADDRESS}--DAILY_FINE_AMOUNT=${_DAILY_FINE_AMOUNT}--MAX_FINE_AMOUNT=${_MAX_FINE_AMOUNT}--BORROWING_PERIOD_DAYS=${_BORROWING_PERIOD_DAYS}--RESERVATION_PERIOD_DAYS=${_RESERVATION_PERIOD_DAYS}--REDIS_URL=${_REDIS_URL}'
 
 # Store the final image in Container Registry
 images:
 - 'gcr.io/$PROJECT_ID/library-management-system:$COMMIT_SHA'
 
-# Logging configuration
-options:
-  logging: CLOUD_LOGGING_ONLY
-
 # --- CONFIGURATION VARIABLES ---
-# These values are now set to match the .env file for development.
-# For production deployment, update these values accordingly.
-# DO NOT store secrets here. Use Secret Manager for sensitive data.
+# For production, move sensitive values to Google Secret Manager.
 substitutions:
   _REGION: 'us-central1'
-  _MIGRATE_JOB_NAME: 'library-management-system-migrate'
-  _RUN_SERVICE_ACCOUNT: 'your-cloud-run-runtime-sa@your-project-id.iam.gserviceaccount.com' # Recommended to not use the default
-  _CLOUD_SQL_INSTANCE_NAME: 'your-project:your-region:your-instance'
-  _VPC_CONNECTOR_NAME: 'your-vpc-connector-name'
 
-  # Environment Variables - Values from .env file
-  # WARNING: For production, move sensitive values to Secret Manager
+  # Environment Variables
+  # 🚨 WARNING: Storing secrets here is insecure. This is for testing only.
   _SECRET_KEY: 'ToQoNK7BG"}/I.1<<g^eqW}pD5$Qbz<oBS=_(B]$DZbRyKm[@"^`#e%Yl-<:n'
-  _ALLOWED_HOSTS: 'localhost 127.0.0.1' # Space-separated for Cloud Build compatibility
-  _DATABASE_URL: 'sqlite:///db.sqlite3' # Using SQLite for initial deployment
+  # Set to '*' for testing to allow any hostname.
+  _ALLOWED_HOSTS: '*'
+  _DATABASE_URL: 'sqlite:///db.sqlite3'
   _EMAIL_BACKEND: 'django.core.mail.backends.smtp.EmailBackend'
   _EMAIL_HOST: 'smtp.gmail.com'
   _EMAIL_PORT: '587'
   _EMAIL_USE_TLS: 'True'
   _EMAIL_HOST_USER: 'helpdesk.rdi@gmail.com'
-  _EMAIL_HOST_PASSWORD: 'jdtonlzsskoimibg' # WARNING: Move to Secret Manager for production
+  # 🚨 WARNING: This is an app password and should be in Secret Manager.
+  _EMAIL_HOST_PASSWORD: 'jdtonlzsskoimibg'
   _DEFAULT_FROM_EMAIL: 'helpdesk.rdi@gmail.com'
   _LIBRARY_NAME: 'NTA Library'
   _LIBRARY_EMAIL: 'helpdesk.rdi@gmail.com'
@@ -101,4 +62,4 @@ substitutions:
   _MAX_FINE_AMOUNT: '50.00'
   _BORROWING_PERIOD_DAYS: '14'
   _RESERVATION_PERIOD_DAYS: '7'
-  _REDIS_URL: 'redis://localhost:6379/0' # Using local Redis for initial deployment
+  _REDIS_URL: 'redis://localhost:6379/0'
