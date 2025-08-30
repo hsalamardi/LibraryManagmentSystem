@@ -16,11 +16,12 @@ This guide explains how to deploy the Library Management System to Google Cloud 
 
 ### 1. Environment Variables Configuration
 
-The `cloudbuild.yaml` file has been configured to use values from your local `.env` file by default. Before deploying to production:
+The `cloudbuild.yaml` file has been configured to use values from your local `.env` file by default and simplified for initial deployment. Before deploying to production:
 
 1. Review the substitution variables in `cloudbuild.yaml`
-2. Update production-specific values (like `_ALLOWED_HOSTS`, `_CLOUD_SQL_INSTANCE_NAME`, etc.)
+2. Update production-specific values (like `_ALLOWED_HOSTS`, etc.)
 3. Ensure sensitive data is stored in Secret Manager, not in substitution variables
+4. **Note**: Advanced features like Cloud SQL, VPC connectors, and migration jobs are commented out for initial deployment. Uncomment and configure them as needed for production.
 
 ### 3. Create a Cloud Build Trigger
 

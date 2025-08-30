@@ -26,39 +26,41 @@ steps:
     - '--image=gcr.io/$PROJECT_ID/library-management-system:$COMMIT_SHA'
     - '--region=${_REGION}'
     - '--platform=managed'
-    - '--no-traffic'
-    - '--service-account=${_RUN_SERVICE_ACCOUNT}'
-    - '--add-cloudsql-instances=${_CLOUD_SQL_INSTANCE_NAME}'
-    - '--vpc-connector=${_VPC_CONNECTOR_NAME}'
+    # - '--no-traffic' # Commented out - allow traffic to new revision immediately
+    # - '--service-account=${_RUN_SERVICE_ACCOUNT}' # Commented out - using default service account
+    # - '--add-cloudsql-instances=${_CLOUD_SQL_INSTANCE_NAME}' # Commented out - not using Cloud SQL
+    # - '--vpc-connector=${_VPC_CONNECTOR_NAME}' # Commented out - not using VPC connector
     - '--set-env-vars=DEBUG=False,ALLOWED_HOSTS=${_ALLOWED_HOSTS},EMAIL_BACKEND=${_EMAIL_BACKEND},EMAIL_HOST=${_EMAIL_HOST},EMAIL_PORT=${_EMAIL_PORT},EMAIL_USE_TLS=${_EMAIL_USE_TLS},EMAIL_HOST_USER=${_EMAIL_HOST_USER},DEFAULT_FROM_EMAIL=${_DEFAULT_FROM_EMAIL},LIBRARY_NAME=${_LIBRARY_NAME},LIBRARY_EMAIL=${_LIBRARY_EMAIL},LIBRARY_PHONE=${_LIBRARY_PHONE},LIBRARY_ADDRESS=${_LIBRARY_ADDRESS},DAILY_FINE_AMOUNT=${_DAILY_FINE_AMOUNT},MAX_FINE_AMOUNT=${_MAX_FINE_AMOUNT},BORROWING_PERIOD_DAYS=${_BORROWING_PERIOD_DAYS},RESERVATION_PERIOD_DAYS=${_RESERVATION_PERIOD_DAYS}'
     - '--set-secrets=SECRET_KEY=django-secret-key:latest,DATABASE_URL=db-connection-string:latest,EMAIL_HOST_PASSWORD=gmail-app-password:latest,REDIS_URL=redis-connection-string:latest'
 
 # 4. Run database migrations using a Cloud Run Job
 # This runs migrations against the newly deployed (but not yet live) revision's environment.
 # The build will fail here if migrations fail, preventing a broken release.
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  id: 'Migrate Database'
-  entrypoint: gcloud
-  args:
-    - 'run'
-    - 'jobs'
-    - 'execute'
-    - '${_MIGRATE_JOB_NAME}'
-    - '--region=${_REGION}'
-    - '--wait' # Wait for the migration to complete before proceeding
+# COMMENTED OUT - Migration job not configured yet
+# - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+#   id: 'Migrate Database'
+#   entrypoint: gcloud
+#   args:
+#     - 'run'
+#     - 'jobs'
+#     - 'execute'
+#     - '${_MIGRATE_JOB_NAME}'
+#     - '--region=${_REGION}'
+#     - '--wait' # Wait for the migration to complete before proceeding
 
 # 5. Switch traffic to the new revision
 # This step only runs if the migration in the previous step was successful.
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  id: 'Switch Traffic'
-  entrypoint: gcloud
-  args:
-    - 'run'
-    - 'services'
-    - 'update-traffic'
-    - 'library-management-system'
-    - '--to-latest'
-    - '--region=${_REGION}'
+# COMMENTED OUT - Manual traffic switching recommended for initial deployment
+# - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+#   id: 'Switch Traffic'
+#   entrypoint: gcloud
+#   args:
+#     - 'run'
+#     - 'services'
+#     - 'update-traffic'
+#     - 'library-management-system'
+#     - '--to-latest'
+#     - '--region=${_REGION}'
 
 # Store the final image in Container Registry
 images:
