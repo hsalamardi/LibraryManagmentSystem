@@ -18,17 +18,20 @@ steps:
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   id: 'Deploy Revision'
   entrypoint: gcloud
-  args: >-
-    run deploy library-management-system
-    --image=gcr.io/$PROJECT_ID/library-management-system:$COMMIT_SHA
-    --region=${_REGION}
-    --platform=managed
-    --no-traffic
-    --service-account=${_RUN_SERVICE_ACCOUNT}
-    --add-cloudsql-instances=${_CLOUD_SQL_INSTANCE_NAME}
-    --vpc-connector=${_VPC_CONNECTOR_NAME}
-    --set-env-vars=DEBUG=False,ALLOWED_HOSTS=${_ALLOWED_HOSTS},EMAIL_BACKEND=${_EMAIL_BACKEND},EMAIL_HOST=${_EMAIL_HOST},EMAIL_PORT=${_EMAIL_PORT},EMAIL_USE_TLS=${_EMAIL_USE_TLS},EMAIL_HOST_USER=${_EMAIL_HOST_USER},DEFAULT_FROM_EMAIL=${_DEFAULT_FROM_EMAIL},LIBRARY_NAME=${_LIBRARY_NAME},LIBRARY_EMAIL=${_LIBRARY_EMAIL},LIBRARY_PHONE=${_LIBRARY_PHONE},LIBRARY_ADDRESS=${_LIBRARY_ADDRESS},DAILY_FINE_AMOUNT=${_DAILY_FINE_AMOUNT},MAX_FINE_AMOUNT=${_MAX_FINE_AMOUNT},BORROWING_PERIOD_DAYS=${_BORROWING_PERIOD_DAYS},RESERVATION_PERIOD_DAYS=${_RESERVATION_PERIOD_DAYS}
-    --set-secrets=SECRET_KEY=django-secret-key:latest,DATABASE_URL=db-connection-string:latest,EMAIL_HOST_PASSWORD=gmail-app-password:latest,REDIS_URL=redis-connection-string:latest
+  # CORRECTED SECTION: Each argument is now a separate list item.
+  args:
+    - 'run'
+    - 'deploy'
+    - 'library-management-system'
+    - '--image=gcr.io/$PROJECT_ID/library-management-system:$COMMIT_SHA'
+    - '--region=${_REGION}'
+    - '--platform=managed'
+    - '--no-traffic'
+    - '--service-account=${_RUN_SERVICE_ACCOUNT}'
+    - '--add-cloudsql-instances=${_CLOUD_SQL_INSTANCE_NAME}'
+    - '--vpc-connector=${_VPC_CONNECTOR_NAME}'
+    - '--set-env-vars=DEBUG=False,ALLOWED_HOSTS=${_ALLOWED_HOSTS},EMAIL_BACKEND=${_EMAIL_BACKEND},EMAIL_HOST=${_EMAIL_HOST},EMAIL_PORT=${_EMAIL_PORT},EMAIL_USE_TLS=${_EMAIL_USE_TLS},EMAIL_HOST_USER=${_EMAIL_HOST_USER},DEFAULT_FROM_EMAIL=${_DEFAULT_FROM_EMAIL},LIBRARY_NAME=${_LIBRARY_NAME},LIBRARY_EMAIL=${_LIBRARY_EMAIL},LIBRARY_PHONE=${_LIBRARY_PHONE},LIBRARY_ADDRESS=${_LIBRARY_ADDRESS},DAILY_FINE_AMOUNT=${_DAILY_FINE_AMOUNT},MAX_FINE_AMOUNT=${_MAX_FINE_AMOUNT},BORROWING_PERIOD_DAYS=${_BORROWING_PERIOD_DAYS},RESERVATION_PERIOD_DAYS=${_RESERVATION_PERIOD_DAYS}'
+    - '--set-secrets=SECRET_KEY=django-secret-key:latest,DATABASE_URL=db-connection-string:latest,EMAIL_HOST_PASSWORD=gmail-app-password:latest,REDIS_URL=redis-connection-string:latest'
 
 # 4. Run database migrations using a Cloud Run Job
 # This runs migrations against the newly deployed (but not yet live) revision's environment.
@@ -91,9 +94,3 @@ substitutions:
   _MAX_FINE_AMOUNT: '50.00'
   _BORROWING_PERIOD_DAYS: '14'
   _RESERVATION_PERIOD_DAYS: '7'
-  _REDIS_URL: 'redis://10.0.0.1:6379/0'
-
-# You can set these values in the Cloud Build trigger configuration
-# or override them when manually triggering a build
-
-# Set a timeout for the entire build process (30 minutes)
