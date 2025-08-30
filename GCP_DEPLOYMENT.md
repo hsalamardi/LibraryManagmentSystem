@@ -22,6 +22,7 @@ The `cloudbuild.yaml` file has been configured to use values from your local `.e
 2. Update production-specific values (like `_ALLOWED_HOSTS`, etc.)
 3. Ensure sensitive data is stored in Secret Manager, not in substitution variables
 4. **Note**: Advanced features like Cloud SQL, VPC connectors, and migration jobs are commented out for initial deployment. Uncomment and configure them as needed for production.
+5. **Security Warning**: Sensitive values like `SECRET_KEY` and `EMAIL_HOST_PASSWORD` are currently in the substitution variables for initial deployment. **For production, these MUST be moved to Secret Manager** for security.
 
 ### 3. Create a Cloud Build Trigger
 
