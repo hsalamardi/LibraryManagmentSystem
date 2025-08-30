@@ -56,6 +56,15 @@ gcloud run jobs create migrate-db --image gcr.io/[PROJECT_ID]/[SERVICE_NAME]:[TA
 
 Make sure all required environment variables are set in the Cloud Build trigger configuration or in the `.env` file for local testing.
 
+**Important Note on Environment Variables Format:**
+
+When setting environment variables in `cloudbuild.yaml`, use the correct format:
+```yaml
+--set-env-vars=KEY1=VALUE1,KEY2=VALUE2,KEY3=VALUE3
+```
+
+Do not use line breaks or spaces between variables. Make sure to escape special characters properly.
+
 ## Monitoring and Logging
 
 After deployment, you can monitor your application using Google Cloud Console:

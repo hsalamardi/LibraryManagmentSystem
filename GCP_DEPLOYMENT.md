@@ -109,6 +109,12 @@ Cloud Run automatically scales based on traffic. You can configure the minimum a
 1. **Database Connection Issues**: Ensure your Cloud SQL instance is properly configured and the connection string is correct
 2. **Static Files Not Loading**: Check that WhiteNoise is properly configured
 3. **Environment Variables**: Verify that all required environment variables are set in Cloud Build
+   - When setting environment variables in `cloudbuild.yaml`, use the correct format:
+   ```yaml
+   - '--set-env-vars=KEY1=VALUE1,KEY2=VALUE2,KEY3=VALUE3'
+   ```
+   - Do not use line breaks or spaces between variables
+   - Make sure to escape special characters properly
 4. **Build Failures with mysqlclient**: If you encounter errors related to mysqlclient installation (like missing pkg-config or MySQL libraries), this is already handled in the Dockerfile by installing the necessary system dependencies:
    ```
    default-libmysqlclient-dev
