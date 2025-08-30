@@ -69,8 +69,9 @@ options:
   logging: CLOUD_LOGGING_ONLY
 
 # --- CONFIGURATION VARIABLES ---
-# Replace the values below with your specific configuration.
-# DO NOT store secrets here. Use Secret Manager.
+# These values are now set to match the .env file for development.
+# For production deployment, update these values accordingly.
+# DO NOT store secrets here. Use Secret Manager for sensitive data.
 substitutions:
   _REGION: 'us-central1'
   _MIGRATE_JOB_NAME: 'library-management-system-migrate'
@@ -78,18 +79,18 @@ substitutions:
   _CLOUD_SQL_INSTANCE_NAME: 'your-project:your-region:your-instance'
   _VPC_CONNECTOR_NAME: 'your-vpc-connector-name'
 
-  # Environment Variables (Non-secret)
-  _ALLOWED_HOSTS: 'your-cloud-run-url.a.run.app,library.yourdomain.com' # Comma-separated
+  # Environment Variables (Non-secret) - Values from .env file
+  _ALLOWED_HOSTS: 'localhost 127.0.0.1' # Space-separated for Cloud Build compatibility
   _EMAIL_BACKEND: 'django.core.mail.backends.smtp.EmailBackend'
   _EMAIL_HOST: 'smtp.gmail.com'
   _EMAIL_PORT: '587'
   _EMAIL_USE_TLS: 'True'
-  _EMAIL_HOST_USER: 'your-email@gmail.com'
-  _DEFAULT_FROM_EMAIL: 'your-email@gmail.com'
+  _EMAIL_HOST_USER: 'helpdesk.rdi@gmail.com'
+  _DEFAULT_FROM_EMAIL: 'helpdesk.rdi@gmail.com'
   _LIBRARY_NAME: 'NTA Library'
-  _LIBRARY_EMAIL: 'library@nta.edu'
+  _LIBRARY_EMAIL: 'helpdesk.rdi@gmail.com'
   _LIBRARY_PHONE: '+1234567890'
-  _LIBRARY_ADDRESS: '123 Library Street, City, State 12345'
+  _LIBRARY_ADDRESS: '123_Library_Street_City_State_12345'
   _DAILY_FINE_AMOUNT: '1.00'
   _MAX_FINE_AMOUNT: '50.00'
   _BORROWING_PERIOD_DAYS: '14'

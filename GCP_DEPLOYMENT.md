@@ -14,7 +14,15 @@ This guide explains how to deploy the Library Management System to Google Cloud 
 
 ## Setup Steps
 
-### 1. Create a Cloud Build Trigger
+### 1. Environment Variables Configuration
+
+The `cloudbuild.yaml` file has been configured to use values from your local `.env` file by default. Before deploying to production:
+
+1. Review the substitution variables in `cloudbuild.yaml`
+2. Update production-specific values (like `_ALLOWED_HOSTS`, `_CLOUD_SQL_INSTANCE_NAME`, etc.)
+3. Ensure sensitive data is stored in Secret Manager, not in substitution variables
+
+### 3. Create a Cloud Build Trigger
 
 1. Go to the Cloud Build section in the Google Cloud Console
 2. Navigate to Triggers and click "Create Trigger"
