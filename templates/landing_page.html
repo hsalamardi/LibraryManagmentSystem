@@ -664,9 +664,6 @@
                     </li>
                     {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'books:dashboard' %}"><i class="fas fa-chart-bar me-1"></i>Dashboard</a>
-                    </li>
-                    <li class="nav-item">
                         <a class="nav-link" href="{% url 'books:my_books' %}"><i class="fas fa-user-books me-1"></i>My Books</a>
                     </li>
                     {% if user.is_staff or user.is_superuser %}
@@ -765,6 +762,7 @@
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         {% if user.is_authenticated %}
+                            <li><a class="dropdown-item" href="{% url 'books:dashboard' %}"><i class="fas fa-chart-bar me-2"></i>Dashboard</a></li>
                             <li><a class="dropdown-item" href="{% url 'books:my_books' %}"><i class="fas fa-book-reader me-2"></i>My Books</a></li>
                             <li><a class="dropdown-item" href="/library_users/profile"><i class="fas fa-user-edit me-2"></i>Profile</a></li>
                             <li><hr class="dropdown-divider"></li>

@@ -15,20 +15,112 @@ from library_users.models import UserProfileinfo
 from django.shortcuts import redirect
 
 
-@method_decorator(login_required, name='dispatch')
 class DashboardView(TemplateView):
-    """Main dashboard view for all authenticated users with comprehensive analytics"""
+    """Public library dashboard with valuable information for everyone - no login required"""
     template_name = 'books/dashboard.html'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Get all dashboard data
-        dashboard_data = LibraryReports.get_dashboard_summary()
-        context.update(dashboard_data)
+        # Public Library Statistics
+        total_books = Book.objects.count()
+        available_books = Book.objects.filter(is_available=True).count()
+        borrowed_books = total_books - available_books
         
-        # Add chart data
-        context['chart_data'] = self.get_chart_data()
+        # Collection Statistics
+        total_users = UserProfileinfo.objects.count()
+        active_borrowers = Borrower.objects.filter(
+            return_date__isnull=True
+        ).values('borrower').distinct().count()
+        
+        # Calculate collection utilization rate
+        utilization_rate = round((borrowed_books / total_books * 100), 1) if total_books > 0 else 0
+        
+        # Get popular books (most borrowed)
+        popular_books = Book.objects.annotate(
+            borrow_count=Count('borrowings')
+        ).filter(borrow_count__gt=0).order_by('-borrow_count')[:10]
+        
+        # Get recently added books
+        recent_books = Book.objects.order_by('-date_added')[:8]
+        
+        # Get books by language distribution
+        language_stats = Book.objects.values('language').annotate(
+            count=Count('id')
+        ).order_by('-count')[:5]
+        
+        # Get books by category/genre
+        category_stats = Book.objects.values('main_class').annotate(
+            count=Count('id')
+        ).order_by('-count')[:8]
+        
+        # Library services and information
+        library_info = {
+            'name': 'NTA Digital Library',
+            'description': 'Your gateway to knowledge and learning',
+            'established': '2024',
+            'mission': 'To provide free access to knowledge and foster a love of reading in our community',
+            'services': [
+                'Book Borrowing & Returns',
+                'Digital Resources Access',
+                'Research Assistance',
+                'Reading Programs',
+                'Study Spaces',
+                'Community Events'
+            ],
+            'opening_hours': {
+                'monday_friday': '8:00 AM - 8:00 PM',
+                'saturday': '9:00 AM - 6:00 PM',
+                'sunday': '12:00 PM - 5:00 PM'
+            },
+            'contact': {
+                'phone': '+1 (555) 123-4567',
+                'email': 'info@ntalibrary.com',
+                'address': '123 Knowledge Street, Learning City, LC 12345'
+            }
+        }
+        
+        # Reading statistics for public interest
+        from datetime import datetime
+        today = date.today()
+        reading_stats = {
+            'books_borrowed_today': Borrower.objects.filter(
+                borrow_date__year=today.year,
+                borrow_date__month=today.month,
+                borrow_date__day=today.day
+            ).count(),
+            'books_returned_today': Borrower.objects.filter(
+                return_date__year=today.year,
+                return_date__month=today.month,
+                return_date__day=today.day
+            ).count(),
+            'most_active_day': 'Monday',  # Could be calculated from data
+            'average_books_per_user': round(total_books / total_users, 1) if total_users > 0 else 0
+        }
+        
+        context.update({
+            # Basic Statistics
+            'total_books': total_books,
+            'available_books': available_books,
+            'borrowed_books': borrowed_books,
+            'total_users': total_users,
+            'active_borrowers': active_borrowers,
+            'utilization_rate': utilization_rate,
+            
+            # Public Information
+            'library_info': library_info,
+            'reading_stats': reading_stats,
+            'popular_books': popular_books,
+            'recent_books': recent_books,
+            'language_stats': language_stats,
+            'category_stats': category_stats,
+            
+            # Charts and Analytics
+            'chart_data': self.get_chart_data(),
+            
+            # Public access flag
+            'is_public_dashboard': True,
+        })
         
         return context
     

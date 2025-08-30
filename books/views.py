@@ -503,7 +503,13 @@ def approve_borrow_request(request, request_id):
 @librarian_required
 def approve_return_request(request, request_id):
     """Approve a return request and process the actual return"""
-    return_request = get_object_or_404(ReturnRequest, id=request_id, status='pending')
+    # First try to get the return request regardless of status
+    return_request = get_object_or_404(ReturnRequest, id=request_id)
+    
+    # Check if the request is already processed
+    if return_request.status != 'pending':
+        messages.warning(request, f'This return request has already been {return_request.status}.')
+        return redirect('books:manage_borrow_requests')
     
     if request.method == 'POST':
         admin_notes = request.POST.get('admin_notes', '')
@@ -592,7 +598,13 @@ def approve_return_request(request, request_id):
 @librarian_required
 def deny_return_request(request, request_id):
     """Deny a return request"""
-    return_request = get_object_or_404(ReturnRequest, id=request_id, status='pending')
+    # First try to get the return request regardless of status
+    return_request = get_object_or_404(ReturnRequest, id=request_id)
+    
+    # Check if the request is already processed
+    if return_request.status != 'pending':
+        messages.warning(request, f'This return request has already been {return_request.status}.')
+        return redirect('books:manage_borrow_requests')
     
     if request.method == 'POST':
         admin_notes = request.POST.get('admin_notes', '')

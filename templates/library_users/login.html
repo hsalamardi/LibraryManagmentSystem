@@ -7,16 +7,16 @@
 {% block extra_css %}
 <style>
     :root {
-        --primary-color: #6366f1;
-        --secondary-color: #8b5cf6;
-        --accent-color: #a855f7;
+        --primary-color: #2ecc71;
+        --secondary-color: #27ae60;
+        --accent-color: #1abc9c;
         --success-color: #10b981;
         --danger-color: #ef4444;
         --warning-color: #f59e0b;
         --info-color: #06b6d4;
         --light-color: #f8fafc;
-        --dark-color: #0f172a;
-        --card-bg: #1e293b;
+        --dark-color: #2c3e50;
+        --card-bg: #34495e;
         --text-light: #f1f5f9;
         --text-muted: #94a3b8;
         --border-radius: 16px;
@@ -255,7 +255,7 @@
     }
     
     .btn-login {
-        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        background: linear-gradient(135deg, #3498db, #2980b9);
         border: none;
         border-radius: var(--border-radius);
         padding: 1rem 2rem;
@@ -266,14 +266,14 @@
         transition: var(--transition);
         position: relative;
         overflow: hidden;
-        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
     }
     
     .btn-login:hover {
         transform: translateY(-3px);
-        box-shadow: 0 12px 30px rgba(99, 102, 241, 0.4);
+        box-shadow: 0 12px 30px rgba(41, 128, 185, 0.4);
         color: white;
-        background: linear-gradient(135deg, var(--secondary-color), var(--accent-color));
+        background: linear-gradient(135deg, #2980b9, #3498db);
     }
     
     .btn-login:active {
@@ -475,7 +475,7 @@
                             <i class="fas fa-spinner fa-spin"></i>
                         </span>
                         <span class="btn-text">
-                            <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                            <i class="fas fa-sign-in-alt me-2"></i>Login
                         </span>
                     </button>
                 </form>

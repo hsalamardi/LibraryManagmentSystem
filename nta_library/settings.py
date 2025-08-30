@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 import os
+import dj_database_url
 from pathlib import Path
 try:
     import environ
@@ -18,7 +19,10 @@ try:
         SECRET_KEY=(str, 'django-insecure-change-me-in-production'),
         DATABASE_URL=(str, 'sqlite:///db.sqlite3'),
     )
-    environ.Env.read_env(os.path.join(Path(__file__).resolve().parent.parent, '.env'))
+    # Read .env file if it exists locally, otherwise use environment variables from Cloud Build
+    env_file = os.path.join(Path(__file__).resolve().parent.parent, '.env')
+    if os.path.isfile(env_file):
+        environ.Env.read_env(env_file)
 except ImportError:
     # Fallback if django-environ is not installed
     class MockEnv:
@@ -116,6 +120,7 @@ APPEND_SLASH = True
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Add whitenoise for static files
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -239,25 +244,16 @@ WSGI_APPLICATION = 'nta_library.wsgi.application'
 #    }
 #}
 
-# Database configuration - using SQLite for testing
+# Database configuration
+# Use DATABASE_URL environment variable if available, otherwise use SQLite
+DATABASE_URL = env('DATABASE_URL', default='sqlite:///db.sqlite3')
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=DATABASE_URL,
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 }
-
-# Uncomment below for MySQL production setup
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'database',
-#         'USER': 'db_user',
-#         'PASSWORD': 'password',
-#         'HOST':'localhost',
-#         'PORT':'3306',
-#     }
-# }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
@@ -300,11 +296,31 @@ STATICFILES_DIRS = [
  ]
 
 STATIC_URL = 'static/'
-STATICFILES_DIRS =[
+STATICFILES_DIRS = [
     STATIC_DIR,
 ]
+
+# Static files configuration for production
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Enable WhiteNoise compression and caching
+WHITENOISE_MIDDLEWARE_WHITELIST = [
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+]
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_AUTOREFRESH = DEBUG
+WHITENOISE_COMPRESS = True
+
+# Media files
 MEDIA_URL = 'media/'
 MEDIA_ROOT = MEDIA_DIR
+
+# For production, consider using Cloud Storage
+# if not DEBUG:
+#     DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+#     GS_BUCKET_NAME = env('GS_BUCKET_NAME', default='')
+#     GS_DEFAULT_ACL = 'publicRead'
 
 LOGIN_URL = 'library_users/login/'
 # Default primary key field type

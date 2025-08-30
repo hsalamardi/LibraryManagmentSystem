@@ -23,6 +23,7 @@ urlpatterns = [
     path('borrow-requests/<int:request_id>/deny/', views.deny_borrow_request, name='deny_borrow_request'),
     
     # Return Requests Management
+    path('return-requests/', views.manage_borrow_requests, name='manage_return_requests'),  # Use the same view for return requests
     path('return-requests/<int:request_id>/approve/', views.approve_return_request, name='approve_return_request'),
     path('return-requests/<int:request_id>/deny/', views.deny_return_request, name='deny_return_request'),
     
