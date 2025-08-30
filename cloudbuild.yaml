@@ -42,7 +42,7 @@ substitutions:
 
   # Environment Variables
   # 🚨 WARNING: Storing secrets here is insecure. This is for testing only.
-  _SECRET_KEY: 'ToQoNK7BG"}/I.1<<g^eqW}pD5$Qbz<oBS=_(B]$DZbRyKm[@"^`#e%Yl-<:n'
+  _SECRET_KEY: 'django-insecure-ToQoNK7BG-I-1-g-eqW-pD5-Qbz-oBS-B-DZbRyKm-e-Yl-n'
   # Set to '*' for testing to allow any hostname.
   _ALLOWED_HOSTS: '*'
   _DATABASE_URL: 'sqlite:///db.sqlite3'
