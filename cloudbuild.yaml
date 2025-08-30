@@ -1,55 +1,87 @@
-steps:
-# Build the container image
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'gcr.io/$PROJECT_ID/library-management-system:$COMMIT_SHA', '.']
-  timeout: '1200s'  # 20 minutes timeout for build step
+# Total build timeout
+timeout: '1800s' # 30 minutes
 
-# Push the container image to Container Registry
+steps:
+# 1. Build the container image
 - name: 'gcr.io/cloud-builders/docker'
+  id: 'Build'
+  args: ['build', '-t', 'gcr.io/$PROJECT_ID/library-management-system:$COMMIT_SHA', '.']
+  timeout: '1200s'
+
+# 2. Push the container image to Google Container Registry
+- name: 'gcr.io/cloud-builders/docker'
+  id: 'Push'
   args: ['push', 'gcr.io/$PROJECT_ID/library-management-system:$COMMIT_SHA']
 
-# Deploy container image to Cloud Run
+# 3. Deploy new revision to Cloud Run with NO traffic
+# This step safely stages the new version without making it live.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  id: 'Deploy Revision'
+  entrypoint: gcloud
+  args: >-
+    run deploy library-management-system
+    --image=gcr.io/$PROJECT_ID/library-management-system:$COMMIT_SHA
+    --region=${_REGION}
+    --platform=managed
+    --no-traffic
+    --service-account=${_RUN_SERVICE_ACCOUNT}
+    --add-cloudsql-instances=${_CLOUD_SQL_INSTANCE_NAME}
+    --vpc-connector=${_VPC_CONNECTOR_NAME}
+    --set-env-vars=DEBUG=False,ALLOWED_HOSTS=${_ALLOWED_HOSTS},EMAIL_BACKEND=${_EMAIL_BACKEND},EMAIL_HOST=${_EMAIL_HOST},EMAIL_PORT=${_EMAIL_PORT},EMAIL_USE_TLS=${_EMAIL_USE_TLS},EMAIL_HOST_USER=${_EMAIL_HOST_USER},DEFAULT_FROM_EMAIL=${_DEFAULT_FROM_EMAIL},LIBRARY_NAME=${_LIBRARY_NAME},LIBRARY_EMAIL=${_LIBRARY_EMAIL},LIBRARY_PHONE=${_LIBRARY_PHONE},LIBRARY_ADDRESS=${_LIBRARY_ADDRESS},DAILY_FINE_AMOUNT=${_DAILY_FINE_AMOUNT},MAX_FINE_AMOUNT=${_MAX_FINE_AMOUNT},BORROWING_PERIOD_DAYS=${_BORROWING_PERIOD_DAYS},RESERVATION_PERIOD_DAYS=${_RESERVATION_PERIOD_DAYS}
+    --set-secrets=SECRET_KEY=django-secret-key:latest,DATABASE_URL=db-connection-string:latest,EMAIL_HOST_PASSWORD=gmail-app-password:latest,REDIS_URL=redis-connection-string:latest
+
+# 4. Run database migrations using a Cloud Run Job
+# This runs migrations against the newly deployed (but not yet live) revision's environment.
+# The build will fail here if migrations fail, preventing a broken release.
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  id: 'Migrate Database'
   entrypoint: gcloud
   args:
-  - 'run'
-  - 'deploy'
-  - 'library-management-system'
-  - '--image'
-  - 'gcr.io/$PROJECT_ID/library-management-system:$COMMIT_SHA'
-  - '--region'
-  - 'us-central1'
-  - '--platform'
-  - 'managed'
-  - '--allow-unauthenticated'
-  - '--set-env-vars=DEBUG=False,SECRET_KEY=${_SECRET_KEY},ALLOWED_HOSTS=${_ALLOWED_HOSTS},DATABASE_URL=${_DATABASE_URL},EMAIL_BACKEND=${_EMAIL_BACKEND},EMAIL_HOST=${_EMAIL_HOST},EMAIL_PORT=${_EMAIL_PORT},EMAIL_USE_TLS=${_EMAIL_USE_TLS},EMAIL_HOST_USER=${_EMAIL_HOST_USER},EMAIL_HOST_PASSWORD=${_EMAIL_HOST_PASSWORD},DEFAULT_FROM_EMAIL=${_DEFAULT_FROM_EMAIL},LIBRARY_NAME=${_LIBRARY_NAME},LIBRARY_EMAIL=${_LIBRARY_EMAIL},LIBRARY_PHONE=${_LIBRARY_PHONE},LIBRARY_ADDRESS=${_LIBRARY_ADDRESS},DAILY_FINE_AMOUNT=${_DAILY_FINE_AMOUNT},MAX_FINE_AMOUNT=${_MAX_FINE_AMOUNT},BORROWING_PERIOD_DAYS=${_BORROWING_PERIOD_DAYS},RESERVATION_PERIOD_DAYS=${_RESERVATION_PERIOD_DAYS},REDIS_URL=${_REDIS_URL}'
+    - 'run'
+    - 'jobs'
+    - 'execute'
+    - '${_MIGRATE_JOB_NAME}'
+    - '--region=${_REGION}'
+    - '--wait' # Wait for the migration to complete before proceeding
 
-# Run database migrations
-- name: 'gcr.io/$PROJECT_ID/library-management-system:$COMMIT_SHA'
-  entrypoint: 'python'
-  args: ['manage.py', 'migrate', '--noinput']
-  env:
-  - 'DATABASE_URL=${_DATABASE_URL}'
-  - 'SECRET_KEY=${_SECRET_KEY}'
-  - 'DEBUG=False'
-  - 'ALLOWED_HOSTS=${_ALLOWED_HOSTS}'
-options:
-  logging: CLOUD_LOGGING_ONLY
-# Store images in Google Container Registry
+# 5. Switch traffic to the new revision
+# This step only runs if the migration in the previous step was successful.
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  id: 'Switch Traffic'
+  entrypoint: gcloud
+  args:
+    - 'run'
+    - 'services'
+    - 'update-traffic'
+    - 'library-management-system'
+    - '--to-latest'
+    - '--region=${_REGION}'
+
+# Store the final image in Container Registry
 images:
 - 'gcr.io/$PROJECT_ID/library-management-system:$COMMIT_SHA'
 
-# Substitution variables for environment variables
+# Logging configuration
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+# --- CONFIGURATION VARIABLES ---
+# Replace the values below with your specific configuration.
+# DO NOT store secrets here. Use Secret Manager.
 substitutions:
-  _SECRET_KEY: 'your-secret-key-here'
-  _ALLOWED_HOSTS: 'your-cloud-run-url.a.run.app library.yourdomain.com'
-  _DATABASE_URL: 'postgres://user:password@/dbname?host=/cloudsql/your-project:your-region:your-instance'
+  _REGION: 'us-central1'
+  _MIGRATE_JOB_NAME: 'library-management-system-migrate'
+  _RUN_SERVICE_ACCOUNT: 'your-cloud-run-runtime-sa@your-project-id.iam.gserviceaccount.com' # Recommended to not use the default
+  _CLOUD_SQL_INSTANCE_NAME: 'your-project:your-region:your-instance'
+  _VPC_CONNECTOR_NAME: 'your-vpc-connector-name'
+
+  # Environment Variables (Non-secret)
+  _ALLOWED_HOSTS: 'your-cloud-run-url.a.run.app,library.yourdomain.com' # Comma-separated
   _EMAIL_BACKEND: 'django.core.mail.backends.smtp.EmailBackend'
   _EMAIL_HOST: 'smtp.gmail.com'
   _EMAIL_PORT: '587'
   _EMAIL_USE_TLS: 'True'
   _EMAIL_HOST_USER: 'your-email@gmail.com'
-  _EMAIL_HOST_PASSWORD: 'your-app-password'
   _DEFAULT_FROM_EMAIL: 'your-email@gmail.com'
   _LIBRARY_NAME: 'NTA Library'
   _LIBRARY_EMAIL: 'library@nta.edu'
@@ -65,4 +97,3 @@ substitutions:
 # or override them when manually triggering a build
 
 # Set a timeout for the entire build process (30 minutes)
-timeout: '1800s'

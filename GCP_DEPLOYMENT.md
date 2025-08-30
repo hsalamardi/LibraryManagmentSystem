@@ -123,6 +123,14 @@ Cloud Run automatically scales based on traffic. You can configure the minimum a
      ```yaml
      _ALLOWED_HOSTS: 'domain1.com,domain2.com'  # This will cause errors
      ```
+   - For values containing spaces or special characters (like addresses), replace spaces with underscores:
+     ```yaml
+     _LIBRARY_ADDRESS: '123_Library_Street_City_State_12345'
+     ```
+     Instead of:
+     ```yaml
+     _LIBRARY_ADDRESS: '123 Library Street, City, State 12345'  # This will cause errors
+     ```
 4. **Build Failures with mysqlclient**: If you encounter errors related to mysqlclient installation (like missing pkg-config or MySQL libraries), this is already handled in the Dockerfile by installing the necessary system dependencies:
    ```
    default-libmysqlclient-dev

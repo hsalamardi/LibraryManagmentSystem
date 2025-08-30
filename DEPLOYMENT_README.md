@@ -75,6 +75,16 @@ Instead of:
 _ALLOWED_HOSTS: 'domain1.com,domain2.com'  # This will cause errors
 ```
 
+**Special Characters in Values:**
+For values containing spaces or special characters, replace spaces with underscores:
+```yaml
+_LIBRARY_ADDRESS: '123_Library_Street_City_State_12345'
+```
+Instead of:
+```yaml
+_LIBRARY_ADDRESS: '123 Library Street, City, State 12345'  # This will cause errors
+```
+
 ## Monitoring and Logging
 
 After deployment, you can monitor your application using Google Cloud Console:
