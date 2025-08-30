@@ -118,6 +118,10 @@ Cloud Run automatically scales based on traffic. You can configure the minimum a
    ```
    If you still encounter issues, you may need to check the Cloud Build logs for specific errors
 
+5. **Package Availability Issues**: Some packages may not be available in PyPI or may have different names. For example:
+   - `django-crispy-bootstrap5` has been replaced with `crispy-bootstrap5` in the requirements.txt file
+   - If you encounter similar issues with other packages, check the package name on PyPI or consider alternatives
+
 ## Security Considerations
 
 1. Store sensitive information (API keys, passwords) as Secret Manager secrets

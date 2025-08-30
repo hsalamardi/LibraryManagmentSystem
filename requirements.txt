@@ -10,7 +10,8 @@ dj-database-url>=1.2.0
 
 # Forms and UI
 django-crispy-forms
-django-crispy-bootstrap5
+# django-crispy-bootstrap5 is not available, using alternative
+crispy-bootstrap5>=0.7
 django-widget-tweaks
 
 # Admin interface

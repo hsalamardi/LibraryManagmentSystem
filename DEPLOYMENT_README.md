@@ -37,6 +37,13 @@ python3-dev
 curl
 ```
 
+### Package Availability Issues
+
+Some packages may not be available in PyPI or may have different names. For example:
+
+- `django-crispy-bootstrap5` has been replaced with `crispy-bootstrap5` in the requirements.txt file
+- If you encounter similar issues with other packages, check the package name on PyPI or consider alternatives
+
 ### Database Migrations
 
 The Cloud Build configuration includes a step to run database migrations automatically after deployment. If you need to run migrations manually, you can use the following command:
