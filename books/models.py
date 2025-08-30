@@ -136,6 +136,37 @@ class Borrower(models.Model):
         verbose_name_plural = 'Book Borrowings'
 
 
+class BorrowRequest(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending Approval'),
+        ('approved', 'Approved'),
+        ('denied', 'Denied'),
+        ('cancelled', 'Cancelled'),
+    ]
+    
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='borrow_requests')
+    requester = models.ForeignKey(UserProfileinfo, on_delete=models.CASCADE, related_name='borrow_requests')
+    request_date = models.DateTimeField(auto_now_add=True)
+    requested_duration_days = models.PositiveIntegerField(default=14, help_text="Number of days to borrow")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    notes = models.TextField(null=True, blank=True, help_text="Additional notes from requester")
+    admin_notes = models.TextField(null=True, blank=True, help_text="Notes from librarian/admin")
+    processed_by = models.ForeignKey(UserProfileinfo, on_delete=models.SET_NULL, null=True, blank=True, related_name='processed_requests')
+    processed_date = models.DateTimeField(null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.book.title} - {self.requester.user.username} ({self.status})"
+    
+    @property
+    def is_pending(self):
+        return self.status == 'pending'
+    
+    class Meta:
+        ordering = ['-request_date']
+        verbose_name = 'Borrow Request'
+        verbose_name_plural = 'Borrow Requests'
+
+
 class BookReservation(models.Model):
     STATUS_CHOICES = [
         ('active', 'Active'),

@@ -41,8 +41,8 @@
                         <!-- Action Buttons -->
                         {% if user.is_authenticated %}
                             {% if book_detail.is_available %}
-                                <a href="{% url 'books:borrow_book' book_detail.id %}" class="btn btn-success btn-lg w-100 mb-2">
-                                    <i class="fas fa-book-reader"></i> Borrow This Book
+                                <a href="{% url 'books:borrow_book' book_detail.id %}" class="btn btn-primary btn-lg w-100 mb-2">
+                                    <i class="fas fa-hand-paper"></i> Request to Borrow
                                 </a>
                             {% else %}
                                 <a href="{% url 'books:reserve_book' book_detail.id %}" class="btn btn-warning btn-lg w-100 mb-2">
@@ -194,9 +194,7 @@
                         <div class="mb-4">
                             <h5 class="text-primary mb-3"><i class="fas fa-tags"></i> Keywords</h5>
                             <div>
-                                {% for keyword in book_detail.keywords|split:"," %}
-                                    <span class="badge bg-secondary me-1 mb-1">{{ keyword.strip }}</span>
-                                {% endfor %}
+                                <span class="badge bg-secondary me-1 mb-1">{{ book_detail.keywords }}</span>
                             </div>
                         </div>
                         {% endif %}

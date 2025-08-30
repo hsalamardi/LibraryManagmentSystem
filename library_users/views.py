@@ -14,6 +14,7 @@ from django.urls import reverse,resolve
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, logout, authenticate
 from django.http import HttpRequest, HttpResponse,HttpResponseRedirect
+from .models import UserProfileinfo
 
 import library_users
 
@@ -123,3 +124,23 @@ def contact_form(request):
         form.fields['email'].widget.attrs['placeholder'] = 'Your email'
         form.fields['message'].widget.attrs['placeholder'] = 'Write your message here'
         return render(request, 'library_users/contact.html', {'form': form})
+
+
+@login_required
+def user_profile(request):
+    """Display user profile information"""
+    try:
+        user_profile = UserProfileinfo.objects.get(user=request.user)
+    except UserProfileinfo.DoesNotExist:
+        # Create a profile if it doesn't exist
+        user_profile = UserProfileinfo.objects.create(
+            user=request.user,
+            phone='',
+            address='',
+            status='active'
+        )
+    
+    context = {
+        'user_profile': user_profile,
+    }
+    return render(request, 'library_users/profile.html', context)

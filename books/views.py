@@ -8,11 +8,13 @@ from django.http import JsonResponse, HttpResponseForbidden
 from django.db.models import Q, Count
 from django.core.paginator import Paginator
 from datetime import date, timedelta
-from .models import Book, Borrower, BookReservation
+from .models import Book, Borrower, BookReservation, BorrowRequest
 from library_users.models import UserProfileinfo
 from .forms import NewBook_form, NewBorrower_form, BarcodeScanForm
 from .email_notifications import EmailNotificationService
 from .tasks import send_welcome_email, send_return_confirmation, send_reservation_available_notification
+from .decorators import librarian_required, is_librarian, is_admin
+from django.utils import timezone
 
 
 # Create your views here.
@@ -84,7 +86,7 @@ class BooksListView(ListView):
 class BooksDetailView(DetailView):
     model = Book
     template_name = 'books/book_detail.html'
-    context_object_name = 'book'
+    context_object_name = 'book_detail'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -121,9 +123,9 @@ def books(request):
     return redirect('books:view_books_list')
 
 
-@login_required(login_url='/library_users/register')
+@librarian_required(redirect_url='/library_users/login/')
 def form_name_view(request):
-    """Add new book form"""
+    """Add new book form - Only librarians and admins can add books"""
     if request.method == "POST":
         form = NewBook_form(request.POST)
         if form.is_valid():
@@ -164,7 +166,7 @@ class SearchResultsView(ListView):
 
 @login_required
 def borrow_book(request, book_id):
-    """Borrow a book"""
+    """Submit a borrow request for a book"""
     book = get_object_or_404(Book, id=book_id)
     user_profile = get_object_or_404(UserProfileinfo, user=request.user)
     
@@ -172,28 +174,120 @@ def borrow_book(request, book_id):
         messages.error(request, 'This book is not available for borrowing.')
         return redirect('books:book_detail', pk=book.pk)
     
-    if not user_profile.can_borrow_books:
-        messages.error(request, 'You cannot borrow books at this time. Please check your account status.')
+    # Check if user already has a pending request for this book
+    existing_request = BorrowRequest.objects.filter(
+        book=book,
+        requester=user_profile,
+        status='pending'
+    ).first()
+    
+    if existing_request:
+        messages.warning(request, f'You already have a pending request for "{book.title}".')
         return redirect('books:book_detail', pk=book.pk)
     
-    # Create borrowing record
-    due_date = date.today() + timedelta(days=14)  # 2 weeks borrowing period
-    borrowing = Borrower.objects.create(
-        book=book,
-        borrower=user_profile,
-        due_date=due_date,
-        status='borrowed'
-    )
+    if request.method == 'POST':
+        duration_days = int(request.POST.get('duration_days', 14))
+        notes = request.POST.get('notes', '')
+        
+        # Create borrow request
+        borrow_request = BorrowRequest.objects.create(
+            book=book,
+            requester=user_profile,
+            requested_duration_days=duration_days,
+            notes=notes,
+            status='pending'
+        )
+        
+        messages.success(request, f'Your borrow request for "{book.title}" has been submitted and is pending approval from a librarian.')
+        return redirect('books:book_detail', pk=book.pk)
     
-    # Update book and user status
-    book.is_available = False
-    book.save()
+    # If GET request, show the borrow request form
+    context = {
+        'book': book,
+        'user_profile': user_profile,
+    }
+    return render(request, 'books/borrow_request_form.html', context)
+
+
+@librarian_required
+def manage_borrow_requests(request):
+    """View for librarians to manage borrow requests"""
+    pending_requests = BorrowRequest.objects.filter(status='pending').order_by('-request_date')
+    processed_requests = BorrowRequest.objects.exclude(status='pending').order_by('-processed_date')[:20]
     
-    user_profile.current_books_count += 1
-    user_profile.save()
+    context = {
+        'pending_requests': pending_requests,
+        'processed_requests': processed_requests,
+    }
+    return render(request, 'books/manage_borrow_requests.html', context)
+
+
+@librarian_required
+def approve_borrow_request(request, request_id):
+    """Approve a borrow request and create actual borrowing"""
+    borrow_request = get_object_or_404(BorrowRequest, id=request_id, status='pending')
     
-    messages.success(request, f'You have successfully borrowed "{book.title}". Due date: {due_date}')
-    return redirect('books:book_detail', pk=book.pk)
+    if request.method == 'POST':
+        admin_notes = request.POST.get('admin_notes', '')
+        
+        # Check if book is still available
+        if not borrow_request.book.is_available:
+            messages.error(request, f'Book "{borrow_request.book.title}" is no longer available.')
+            return redirect('books:manage_borrow_requests')
+        
+        # Create actual borrowing record
+        due_date = date.today() + timedelta(days=borrow_request.requested_duration_days)
+        borrowing = Borrower.objects.create(
+            book=borrow_request.book,
+            borrower=borrow_request.requester,
+            due_date=due_date,
+            status='borrowed'
+        )
+        
+        # Update book availability
+        borrow_request.book.is_available = False
+        borrow_request.book.save()
+        
+        # Update request status
+        borrow_request.status = 'approved'
+        borrow_request.admin_notes = admin_notes
+        borrow_request.processed_by = request.user.userprofileinfo
+        borrow_request.processed_date = timezone.now()
+        borrow_request.save()
+        
+        messages.success(request, f'Borrow request approved. "{borrow_request.book.title}" has been borrowed by {borrow_request.requester.user.username}.')
+        return redirect('books:manage_borrow_requests')
+    
+    context = {
+        'borrow_request': borrow_request,
+        'action': 'approve'
+    }
+    return render(request, 'books/process_borrow_request.html', context)
+
+
+@librarian_required
+def deny_borrow_request(request, request_id):
+    """Deny a borrow request"""
+    borrow_request = get_object_or_404(BorrowRequest, id=request_id, status='pending')
+    
+    if request.method == 'POST':
+        admin_notes = request.POST.get('admin_notes', '')
+        
+        # Update request status
+        borrow_request.status = 'denied'
+        borrow_request.admin_notes = admin_notes
+        borrow_request.processed_by = request.user.userprofileinfo
+        borrow_request.processed_date = timezone.now()
+        borrow_request.save()
+        
+        messages.success(request, f'Borrow request denied for "{borrow_request.book.title}".')
+        return redirect('books:manage_borrow_requests')
+    
+    context = {
+        'borrow_request': borrow_request,
+        'action': 'deny'
+    }
+    return render(request, 'books/process_borrow_request.html', context)
 
 
 @login_required
@@ -293,7 +387,7 @@ def reserve_book(request, book_id):
 
 @login_required
 def my_books(request):
-    """Display user's borrowed books and reservations"""
+    """Display user's borrowed books, reservations, and borrow requests"""
     user_profile = get_object_or_404(UserProfileinfo, user=request.user)
     
     borrowed_books = Borrower.objects.filter(
@@ -306,9 +400,27 @@ def my_books(request):
         status='active'
     ).select_related('book')
     
+    # Get borrow requests
+    pending_requests = BorrowRequest.objects.filter(
+        requester=user_profile,
+        status='pending'
+    ).select_related('book')
+    
+    processed_requests = BorrowRequest.objects.filter(
+        requester=user_profile,
+        status__in=['approved', 'denied']
+    ).select_related('book', 'processed_by').order_by('-processed_date')[:10]
+    
+    # Calculate overdue count
+    overdue_count = borrowed_books.filter(due_date__lt=date.today()).count()
+    
     context = {
-        'borrowed_books': borrowed_books,
+        'current_borrowings': borrowed_books,
         'reservations': reservations,
+        'pending_requests': pending_requests,
+        'processed_requests': processed_requests,
+        'borrowing_history': borrowed_books,  # For compatibility with template
+        'overdue_count': overdue_count,
         'user_profile': user_profile,
     }
     

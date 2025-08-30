@@ -14,9 +14,18 @@
                         <a class="btn btn-success" href="{% url 'books:barcode_scan' %}">
                             <i class="fas fa-barcode"></i> Barcode Scanner
                         </a>
+                        {% if user.is_staff or user.groups.all|length > 0 %}
+                            {% for group in user.groups.all %}
+                                {% if group.name == 'Librarian' or group.name == 'Library Admin' %}
+                        <a class="btn btn-warning" href="{% url 'books:manage_borrow_requests' %}">
+                            <i class="fas fa-tasks"></i> Manage Requests
+                        </a>
                         <a class="btn btn-primary" href="{% url 'books:add_a_book' %}">
                             <i class="fas fa-plus"></i> Add New Book
                         </a>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
                         <a class="btn btn-outline-secondary" href="{% url 'books:dashboard' %}">
                             <i class="fas fa-chart-bar"></i> Dashboard
                         </a>

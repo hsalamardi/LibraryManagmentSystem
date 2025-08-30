@@ -1,0 +1,1 @@
+ERROR 2025-08-30 03:15:24,847 views 25284 19236 Failed to queue return confirmation email: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.

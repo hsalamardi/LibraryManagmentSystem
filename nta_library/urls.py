@@ -24,7 +24,7 @@ from django.urls import path
 urlpatterns = [
     path('', include('books.urls',namespace='Books')),
     path('', include('library_users.urls',namespace='Library')),
-    path('admin', admin.site.urls),
+    path('admin/', admin.site.urls),
     # path('forest', include('django_forest.urls')),  # Commented out - missing dependency
 ]
 

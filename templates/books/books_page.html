@@ -10,9 +10,17 @@
                     <hr class="my-4">
                     <p>It uses utility classes for typography and spacing to space content out within the larger container.</p>
                     <p class="lead">
+                    {% if user.is_staff or user.groups.all|length > 0 %}
+                        {% for group in user.groups.all %}
+                            {% if group.name == 'Librarian' or group.name == 'Library Admin' %}
                     <a class="btn btn-danger btn-lg" href= {% url 'books:add_a_book' %}  role="button">Register a  new Book</a>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
                     <a class="btn btn-danger btn-lg" href= {% url 'books:view_books_list' %}  role="button">View Books List</a>
+                    {% if user.is_staff %}
                     <a class="btn btn-danger  btn-lg" href= {% url 'admin:index' %}  role="button">Go to admin Area</a>
+                    {% endif %}
                     <a class="btn btn-danger btn-lg" href= '/'  role="button">Go to Homepage</a>
         
                 </dev>

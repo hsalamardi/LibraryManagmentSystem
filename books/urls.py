@@ -17,6 +17,11 @@ urlpatterns = [
     path('books/<int:book_id>/borrow/', views.borrow_book, name='borrow_book'),
     path('borrowing/<int:borrowing_id>/return/', views.return_book, name='return_book'),
     
+    # Borrow request management (for librarians)
+    path('borrow-requests/', views.manage_borrow_requests, name='manage_borrow_requests'),
+    path('borrow-requests/<int:request_id>/approve/', views.approve_borrow_request, name='approve_borrow_request'),
+    path('borrow-requests/<int:request_id>/deny/', views.deny_borrow_request, name='deny_borrow_request'),
+    
     # Reservations
     path('books/<int:book_id>/reserve/', views.reserve_book, name='reserve_book'),
     

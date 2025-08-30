@@ -133,8 +133,12 @@ python manage.py migrate
 # Setup user groups and permissions
 python manage.py setup_groups
 
-# Create admin user
+# Create admin user (Method 1: Automated from .env)
+python setup_admin.py
+# OR (Method 2: Manual creation)
 python manage.py createsuperuser
+# OR (Method 3: From environment variables)
+python manage.py create_superuser_from_env
 ```
 
 #### **4. Static Files & Media**
@@ -265,6 +269,53 @@ The system includes three user roles with different access levels:
    ```bash
    python manage.py setup_groups
    ```
+
+## 🔐 Admin Setup
+
+### **Environment-Based Admin Creation**
+
+The system supports creating Django admin users from environment variables for automated deployment and consistent setup across environments.
+
+#### **Configuration**
+Add these variables to your `.env` file:
+```env
+# Django Admin Superuser
+DJANGO_SUPERUSER_USERNAME=admin
+DJANGO_SUPERUSER_EMAIL=admin@ntalibrary.edu
+DJANGO_SUPERUSER_PASSWORD=admin123
+```
+
+⚠️ **Security Note**: Change the default password to a strong, unique password, especially for production environments.
+
+#### **Setup Methods**
+
+**Method 1: Automated Setup Script (Recommended)**
+```bash
+python setup_admin.py
+```
+This script handles everything: loads environment variables, runs migrations, and creates the admin user.
+
+**Method 2: Management Command**
+```bash
+# Create new admin user
+python manage.py create_superuser_from_env
+
+# Update existing admin user
+python manage.py create_superuser_from_env --force
+```
+
+**Method 3: Traditional Manual Creation**
+```bash
+python manage.py createsuperuser
+```
+
+#### **Benefits**
+- ✅ **Automated Deployment**: No manual intervention required
+- ✅ **Environment Consistency**: Same setup across dev/staging/production
+- ✅ **Security**: Credentials stored in environment variables, not code
+- ✅ **CI/CD Ready**: Perfect for automated deployment pipelines
+
+For detailed instructions, see [ADMIN_SETUP.md](ADMIN_SETUP.md).
 
 ## Usage
 

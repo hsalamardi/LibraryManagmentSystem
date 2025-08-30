@@ -334,11 +334,11 @@ SIMPLEUI_CONFIG = {
                 {
                     'name': 'groups',
                     'icon': 'fa fa-users-cog',
-                    'url': 'adminauth/group/',
+                    'url': 'auth/group/',
                 },{
                     'name': 'users',
                     'icon': 'fa fa-user',
-                    'url': 'adminauth/user/'
+                    'url': 'auth/user/'
                 }
                 ]
     }, {
@@ -352,22 +352,22 @@ SIMPLEUI_CONFIG = {
             'models': [
               {
                 'name': 'Books',
-                'url': 'adminbooks/book/',
+                'url': 'books/book/',
                 'icon': 'fa fa-address-book',
                 'newTab': True
               }, {
                 'name': 'Borrowers',
-                'url': 'adminbooks/borrower/',
+                'url': 'books/borrower/',
                 'icon': 'fa fa-address-card'
               },
             ]
           }, {
             'name': 'Contacts',
-            'url': 'adminlibrary_users/contact/',
+            'url': 'library_users/contact/',
             'icon': 'fa fa-comment'
 	  }, {
             'name': 'Library more user info',
-            'url': 'adminlibrary_users/userprofileinfo/',
+            'url': 'library_users/userprofileinfo/',
             'icon': 'fa fa-envelope'
         }]
     }]
