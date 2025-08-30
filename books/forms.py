@@ -103,19 +103,64 @@ class BookSearchForm(forms.Form):
         max_length=255,
         required=False,
         widget=forms.TextInput(attrs={
-            'placeholder': 'Search by title, author, ISBN, barcode, or keywords...',
-            'class': 'form-control'
+            'placeholder': 'Search by title, author, series, publisher, ISBN... (e.g., "Harry Potter", "Stephen King", "Python Programming")',
+            'class': 'form-control search-input-enhanced',
+            'autocomplete': 'off',
+            'data-toggle': 'tooltip',
+            'title': 'Smart search supports exact matches, partial words, and multi-word queries. Results are ranked by relevance.'
         })
     )
     availability = forms.ChoiceField(
-        choices=[('', 'All'), ('available', 'Available'), ('borrowed', 'Borrowed')],
+        choices=[('', 'All Books'), ('available', 'Available Only'), ('borrowed', 'Currently Borrowed')],
         required=False,
-        widget=forms.Select(attrs={'class': 'form-control'})
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+            'data-toggle': 'tooltip',
+            'title': 'Filter books by availability status'
+        })
     )
     language = forms.ChoiceField(
         choices=[('', 'All Languages')] + Book.LANGUAGE_CHOICES,
         required=False,
-        widget=forms.Select(attrs={'class': 'form-control'})
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+            'data-toggle': 'tooltip',
+            'title': 'Filter books by language'
+        })
+    )
+    
+    # Advanced search options
+    search_type = forms.ChoiceField(
+        choices=[
+            ('smart', 'Smart Search (Recommended)'),
+            ('exact', 'Exact Phrase Only'),
+            ('any', 'Any Word Match'),
+            ('all', 'All Words Required')
+        ],
+        required=False,
+        initial='smart',
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+            'data-toggle': 'tooltip',
+            'title': 'Choose how to interpret your search query'
+        })
+    )
+    
+    sort_by = forms.ChoiceField(
+        choices=[
+            ('relevance', 'Relevance (Best Match)'),
+            ('title', 'Title A-Z'),
+            ('author', 'Author A-Z'),
+            ('date_added', 'Recently Added'),
+            ('popularity', 'Most Popular')
+        ],
+        required=False,
+        initial='relevance',
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+            'data-toggle': 'tooltip',
+            'title': 'Sort search results by your preference'
+        })
     )
 
 

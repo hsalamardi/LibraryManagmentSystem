@@ -61,19 +61,31 @@ def user_login(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
-        user = authenticate(username=username,password=password)     
-
+        
+        if not username or not password:
+            messages.error(request, 'Please enter both username and password.')
+            return render(request, "library_users/login.html", {'username': username})
+        
+        user = authenticate(username=username, password=password)
+        
         if user:
-                if user.is_active:
-                    login(request,user)
-                    return HttpResponseRedirect(reverse('books:view_books_list'))
-                else:
-                    return HttpResponse("Account Not Active")
+            if user.is_active:
+                login(request, user)
+                messages.success(request, f'Welcome back, {user.get_full_name() or user.username}!')
+                
+                # Redirect to next page if specified, otherwise to books list
+                next_page = request.GET.get('next')
+                if next_page:
+                    return HttpResponseRedirect(next_page)
+                return HttpResponseRedirect(reverse('books:view_books_list'))
+            else:
+                messages.error(request, 'Your account has been deactivated. Please contact the library administrator for assistance.')
+                return render(request, "library_users/login.html", {'username': username})
         else:
-                print("someone tried to ogin and failled")         
-                return HttpResponse('invalid username supplied')
+            messages.error(request, 'Invalid username or password. Please check your credentials and try again.')
+            return render(request, "library_users/login.html", {'username': username})
     else:
-        return render(request,"library_users/login.html",{})    
+        return render(request, "library_users/login.html", {})    
 
 
 

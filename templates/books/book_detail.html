@@ -38,6 +38,31 @@
                             </div>
                         {% endif %}
                         
+                        <!-- Pending Requests Information -->
+                        {% if pending_requests %}
+                            <div class="alert alert-info mb-3">
+                                <h6 class="alert-heading"><i class="fas fa-clock me-2"></i>Pending Requests</h6>
+                                <small>This book has been requested by:</small>
+                                <ul class="list-unstyled mb-0 mt-2">
+                                    {% for request in pending_requests %}
+                                    <li class="mb-1">
+                                        <i class="fas fa-user me-1"></i>
+                                        <strong>{{ request.requester.user.get_full_name|default:request.requester.user.username }}</strong>
+                                        <small class="text-muted">({{ request.request_date|timesince }} ago)</small>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- User's Request Status -->
+                        {% if user_has_pending_request %}
+                            <div class="alert alert-warning mb-3">
+                                <i class="fas fa-hourglass-half me-2"></i>
+                                <strong>Your request is pending approval</strong>
+                            </div>
+                        {% endif %}
+                        
                         <!-- Action Buttons -->
                         {% if user.is_authenticated %}
                             {% if book_detail.is_available %}
@@ -231,40 +256,73 @@
                 </div>
             </div>
         </div>
-    </div> 
-                             <P class="col-6">  <strong> Book Publisher: </strong>  {{book_detail.Publisher}}</p>
-                             <P class="col-6">  <strong> Book website: </strong>  {{book_detail.website}}</p> 
-                             <P class="col-6">  <strong> Book Place_of_Publication: </strong>  {{book_detail.Place_of_Publication}}</p>  
-                             <P class="col-6">  <strong> Book Publication_Date: </strong>  {{book_detail.Publication_Date}}</p> 
-                             <P class="col-6">  <strong> Book Editor: </strong>  {{book_detail.Editor}}</p> 
-                             <P class="col-6">  <strong> Book Language: </strong>  {{book_detail.Language}}</p> 
-                             <P class="col-6">  <strong> Book Cover_Type: </strong>  {{book_detail.Cover_Type}}</p> 
-                             <P class="col-6">  <strong> Book Condition: </strong>  {{book_detail.Condition}}</p> 
-                             <P class="col-6">  <strong> Book Main_Class: </strong>  {{book_detail.Main_Class}}</p> 
-                             <P class="col-6">  <strong> Book Divisions: </strong>  {{book_detail.Divisions}}</p> 
-                             <P class="col-6">  <strong> Book Sections: </strong>  {{book_detail.Sections}}</p> 
-                             <P class="col-6">  <strong> Book Cutter_Author: </strong>  {{book_detail.Cutter_Author}}</p> 
-                             <P class="col-6">  <strong> Book Translator: </strong>  {{book_detail.Translator}}</p> 
-                             <P class="col-6"> <strong> Book Book Summary: </strong> {{book_detail.Book_Summary}}</p> 
-                             <P class="col-6">  <strong> Book Contents: </strong>  {{book_detail.Contents}}</p> 
-                             <P class="col-6">  <strong> Book Keywords: </strong>  {{book_detail.Keywords}}</p> 
-                    </dev>
-                    
-                    <div  class="container">
-
-                            {% if request.user.is_superuser  %}
-                            <h3 class="alert alert-danger" role="alert""col-12">This part can onlt be seen by Superusers:- </h3>
-
-                            {% for borrower in book_detail.book_borrower.all %}
-                    
-                            <P class="col-12">  Borrrower Name :  {{borrower.borrower_name}}</P>
-                            <P class="col-12">  Borrrower Dep. :  {{borrower.department}}</P>
-                            <P class="col-12">  Boorow Date :  {{borrower.borrow_date}}</P>
-                            <P class="col-12">  Return Date :  {{borrower.return_date}}</P>
-                            <P class="col-12">  Is Borrower Blaclisted :  {{borrower.blacklisted}}</P>
-                            {% endfor %}
-                            {% else %}
-                            {% endif %}
-                     </div>
+        
+        <!-- Borrowing History Section -->
+        {% if book_detail.borrowings.all %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-history me-2"></i>Borrowing History</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Borrower</th>
+                                        <th>Department</th>
+                                        <th>Borrow Date</th>
+                                        <th>Due Date</th>
+                                        <th>Return Date</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for borrowing in book_detail.borrowings.all|slice:":10" %}
+                                    <tr>
+                                        <td>
+                                            <div>
+                                                <strong>{{ borrowing.borrower.user.get_full_name|default:borrowing.borrower.user.username }}</strong>
+                                                <br><small class="text-muted">{{ borrowing.borrower.user.email }}</small>
+                                            </div>
+                                        </td>
+                                        <td>{{ borrowing.borrower.department|default:"N/A" }}</td>
+                                        <td>{{ borrowing.borrow_date|date:"M d, Y" }}</td>
+                                        <td>{{ borrowing.due_date|date:"M d, Y" }}</td>
+                                        <td>
+                                            {% if borrowing.return_date %}
+                                                {{ borrowing.return_date|date:"M d, Y" }}
+                                            {% else %}
+                                                <span class="text-muted">Not returned</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if borrowing.status == 'borrowed' %}
+                                                <span class="badge bg-primary">Currently Borrowed</span>
+                                            {% elif borrowing.status == 'returned' %}
+                                                <span class="badge bg-success">Returned</span>
+                                            {% elif borrowing.status == 'overdue' %}
+                                                <span class="badge bg-danger">Overdue</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ borrowing.get_status_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% if book_detail.borrowings.count > 10 %}
+                        <div class="text-center mt-3">
+                            <small class="text-muted">Showing 10 most recent borrowings out of {{ book_detail.borrowings.count }} total</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
             </body>
         {% endblock  %}

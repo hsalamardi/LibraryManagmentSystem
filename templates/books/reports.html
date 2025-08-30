@@ -1,5 +1,6 @@
 {% extends 'library_users/base.html' %}
 {% load static %}
+{% load math_filters %}
 
 {% block title %}Library Reports & Analytics{% endblock %}
 
@@ -93,10 +94,10 @@
             <div class="col-md-6">
                 <h6>Book Availability</h6>
                 <div class="progress progress-custom mb-3">
-                    <div class="progress-bar bg-success" style="width: {{ book_stats.available_books|div:book_stats.total_books|mul:100 }}%">
+                    <div class="progress-bar bg-success" style="width: {{ book_stats.available_books|percentage:book_stats.total_books }}%">
                         {{ book_stats.available_books }} Available
                     </div>
-                    <div class="progress-bar bg-warning" style="width: {{ book_stats.borrowed_books|div:book_stats.total_books|mul:100 }}%">
+                    <div class="progress-bar bg-warning" style="width: {{ book_stats.borrowed_books|percentage:book_stats.total_books }}%">
                         {{ book_stats.borrowed_books }} Borrowed
                     </div>
                 </div>
@@ -104,7 +105,7 @@
             <div class="col-md-6">
                 <h6>User Engagement</h6>
                 <div class="progress progress-custom mb-3">
-                    <div class="progress-bar bg-info" style="width: {{ user_stats.users_with_books|div:user_stats.active_users|mul:100 }}%">
+                    <div class="progress-bar bg-info" style="width: {{ user_stats.users_with_books|percentage:user_stats.active_users }}%">
                         {{ user_stats.users_with_books }} Currently Borrowing
                     </div>
                 </div>
@@ -310,17 +311,17 @@
                             <tr>
                                 <td>Active Reservations</td>
                                 <td>{{ reservation_stats.active_reservations }}</td>
-                                <td>{{ reservation_stats.active_reservations|div:reservation_stats.total_reservations|mul:100|floatformat:1 }}%</td>
+                                <td>{{ reservation_stats.active_reservations|percentage:reservation_stats.total_reservations|floatformat:1 }}%</td>
                             </tr>
                             <tr>
                                 <td>Fulfilled Reservations</td>
                                 <td>{{ reservation_stats.fulfilled_reservations }}</td>
-                                <td>{{ reservation_stats.fulfilled_reservations|div:reservation_stats.total_reservations|mul:100|floatformat:1 }}%</td>
+                                <td>{{ reservation_stats.fulfilled_reservations|percentage:reservation_stats.total_reservations|floatformat:1 }}%</td>
                             </tr>
                             <tr>
                                 <td>Expired Reservations</td>
                                 <td>{{ reservation_stats.expired_reservations }}</td>
-                                <td>{{ reservation_stats.expired_reservations|div:reservation_stats.total_reservations|mul:100|floatformat:1 }}%</td>
+                                <td>{{ reservation_stats.expired_reservations|percentage:reservation_stats.total_reservations|floatformat:1 }}%</td>
                             </tr>
                         </tbody>
                     </table>

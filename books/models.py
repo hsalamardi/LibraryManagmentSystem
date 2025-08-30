@@ -167,6 +167,36 @@ class BorrowRequest(models.Model):
         verbose_name_plural = 'Borrow Requests'
 
 
+class ReturnRequest(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending Approval'),
+        ('approved', 'Approved'),
+        ('denied', 'Denied'),
+        ('cancelled', 'Cancelled'),
+    ]
+    
+    borrowing = models.ForeignKey(Borrower, on_delete=models.CASCADE, related_name='return_requests')
+    requester = models.ForeignKey(UserProfileinfo, on_delete=models.CASCADE, related_name='return_requests')
+    request_date = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    notes = models.TextField(null=True, blank=True, help_text="Additional notes from requester")
+    admin_notes = models.TextField(null=True, blank=True, help_text="Notes from librarian/admin")
+    processed_by = models.ForeignKey(UserProfileinfo, on_delete=models.SET_NULL, null=True, blank=True, related_name='processed_return_requests')
+    processed_date = models.DateTimeField(null=True, blank=True)
+    
+    def __str__(self):
+        return f"Return request for {self.borrowing.book.title} by {self.requester.user.username}"
+    
+    @property
+    def is_pending(self):
+        return self.status == 'pending'
+    
+    class Meta:
+        ordering = ['-request_date']
+        verbose_name = 'Return Request'
+        verbose_name_plural = 'Return Requests'
+
+
 class BookReservation(models.Model):
     STATUS_CHOICES = [
         ('active', 'Active'),

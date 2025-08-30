@@ -231,6 +231,412 @@
         .dropdown-item:hover {
             background-color: var(--bg-light);
         }
+        
+        /* Enhanced Search Styling */
+        .search-form-enhanced {
+            min-width: 400px;
+            position: relative;
+        }
+        
+        .search-group-enhanced {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .search-group-enhanced:focus-within {
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .search-input-enhanced {
+            border: none;
+            padding: 12px 16px;
+            font-size: 14px;
+            background: white;
+            border-radius: 12px 0 0 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .search-input-enhanced:focus {
+            box-shadow: none;
+            border: none;
+            outline: none;
+        }
+        
+        .search-input-enhanced::placeholder {
+            color: #9ca3af;
+            font-style: italic;
+        }
+        
+        .btn-search-enhanced {
+            border: none;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border-radius: 0;
+        }
+        
+        .btn-search-enhanced:hover {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+            transform: translateY(-1px);
+            color: white;
+        }
+        
+        .btn-advanced-search {
+            border: none;
+            padding: 12px 16px;
+            background: #f8f9fa;
+            color: #6b7280;
+            border-radius: 0 12px 12px 0;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-advanced-search:hover {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        
+        .advanced-search-panel {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            margin-top: 8px;
+        }
+        
+        .advanced-search-panel .card {
+            border: none;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            background: white;
+        }
+        
+        .advanced-search-panel .form-label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 4px;
+        }
+        
+        .advanced-search-panel .form-select {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+        
+        .advanced-search-panel .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        /* Search suggestions styling */
+        .search-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            z-index: 1001;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .search-suggestion-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+            transition: background-color 0.2s ease;
+        }
+        
+        .search-suggestion-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .search-suggestion-item:last-child {
+            border-bottom: none;
+        }
+        
+        /* Responsive search */
+        @media (max-width: 768px) {
+            .search-form-enhanced {
+                min-width: 300px;
+            }
+            
+            .search-input-enhanced {
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+            
+            .btn-search-enhanced span {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .search-form-enhanced {
+                min-width: 250px;
+            }
+            
+            .advanced-search-panel .row {
+                flex-direction: column;
+            }
+            
+            .advanced-search-panel .col-md-3 {
+                margin-bottom: 1rem;
+            }
+        }
+        
+        /* Honor Board Styles */
+        .honor-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            margin: 2rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .honor-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,215,0,0.1) 0%, transparent 70%);
+            animation: shimmer 8s ease-in-out infinite;
+        }
+        
+        @keyframes shimmer {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(180deg); }
+        }
+        
+        .honor-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid transparent;
+        }
+        
+        .honor-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        
+        .honor-card.rank-1 {
+            border-color: #FFD700;
+            background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+        }
+        
+        .honor-card.rank-2 {
+            border-color: #C0C0C0;
+            background: linear-gradient(135deg, #f8f8f8 0%, #ffffff 100%);
+        }
+        
+        .honor-card.rank-3 {
+            border-color: #CD7F32;
+            background: linear-gradient(135deg, #fdf6f0 0%, #ffffff 100%);
+        }
+        
+        .honor-badge {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        
+        .rank-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            position: relative;
+            z-index: 2;
+        }
+        
+        .rank-number {
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .medal-icon {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 2rem;
+            z-index: 3;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+        
+        .reader-avatar {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1rem;
+            position: relative;
+        }
+        
+        .avatar-img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #fff;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .avatar-placeholder {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            border: 3px solid #fff;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .reader-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+        
+        .achievement-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .achievement-desc {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 1.5rem;
+            font-style: italic;
+        }
+        
+        .reading-stats {
+            margin: 1.5rem 0;
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+        
+        .stat-item {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .stat-number {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .perfect-reader-badge {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin: 1rem 0;
+            display: inline-block;
+            box-shadow: 0 2px 10px rgba(243, 156, 18, 0.3);
+        }
+        
+        .progress-bar-container {
+            background: #e9ecef;
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+        
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: progress-shine 2s ease-in-out infinite;
+        }
+        
+        @keyframes progress-shine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .honor-title {
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .honor-section {
+                padding: 2rem 1rem;
+            }
+            
+            .honor-card {
+                padding: 1.5rem;
+            }
+            
+            .stat-row {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .stat-item {
+                margin-bottom: 0.5rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -263,16 +669,88 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'books:my_books' %}"><i class="fas fa-user-books me-1"></i>My Books</a>
                     </li>
+                    {% if user.is_staff or user.is_superuser %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'books:manage_borrow_requests' %}"><i class="fas fa-tasks me-1"></i>Requests</a>
+                        </li>
+                    {% elif user.groups.all|length > 0 %}
+                        {% for group in user.groups.all %}
+                            {% if group.name == 'Librarian' or group.name == 'Library Admin' %}
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'books:manage_borrow_requests' %}"><i class="fas fa-tasks me-1"></i>Requests</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
                     {% endif %}
                 </ul>
                 
-                <!-- Search Form -->
-                <form class="d-flex me-3 search-form" action="{% url 'books:search_results' %}" method="get">
-                    <div class="input-group">
-                        <input class="form-control search-input" name="q" type="text" placeholder="Search books, authors..." aria-label="Search">
-                        <button class="btn btn-primary btn-search" type="submit">
-                            <i class="fas fa-search"></i>
-                        </button>
+                <!-- Enhanced Search Form -->
+                <form class="d-flex me-3 search-form-enhanced" action="{% url 'books:search_results' %}" method="get">
+                    <div class="input-group search-group-enhanced">
+                        <input class="form-control search-input-enhanced" 
+                               name="q" 
+                               type="text" 
+                               placeholder="🔍 Smart search: try 'Harry Potter', 'Stephen King', or 'Python Programming'..." 
+                               aria-label="Search"
+                               autocomplete="off"
+                               data-toggle="tooltip"
+                               title="Smart search with relevance ranking. Supports exact matches, partial words, and multi-word queries.">
+                        <div class="input-group-append">
+                            <button class="btn btn-primary btn-search-enhanced" type="submit">
+                                <i class="fas fa-search me-1"></i>
+                                <span class="d-none d-md-inline">Search</span>
+                            </button>
+                            <button class="btn btn-outline-secondary btn-advanced-search" type="button" data-bs-toggle="collapse" data-bs-target="#advancedSearch" aria-expanded="false">
+                                <i class="fas fa-cog"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Advanced Search Options (Collapsible) -->
+                    <div class="collapse advanced-search-panel" id="advancedSearch">
+                        <div class="card card-body mt-2 p-3">
+                            <div class="row g-2">
+                                <div class="col-md-3">
+                                    <label class="form-label small">Search Type</label>
+                                    <select name="search_type" class="form-select form-select-sm">
+                                        <option value="smart">Smart Search</option>
+                                        <option value="exact">Exact Phrase</option>
+                                        <option value="any">Any Word</option>
+                                        <option value="all">All Words</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small">Sort By</label>
+                                    <select name="sort_by" class="form-select form-select-sm">
+                                        <option value="relevance">Relevance</option>
+                                        <option value="title">Title A-Z</option>
+                                        <option value="author">Author A-Z</option>
+                                        <option value="date_added">Recently Added</option>
+                                        <option value="popularity">Most Popular</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small">Availability</label>
+                                    <select name="availability" class="form-select form-select-sm">
+                                        <option value="">All Books</option>
+                                        <option value="available">Available Only</option>
+                                        <option value="borrowed">Currently Borrowed</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small">Language</label>
+                                    <select name="language" class="form-select form-select-sm">
+                                        <option value="">All Languages</option>
+                                        <option value="English">English</option>
+                                        <option value="Arabic">Arabic</option>
+                                        <option value="French">French</option>
+                                        <option value="Spanish">Spanish</option>
+                                        <option value="German">German</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </form>
                 
@@ -297,8 +775,17 @@
                         {% endif %}
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="/library_users/contact"><i class="fas fa-envelope me-2"></i>Contact</a></li>
+                        {% if user.is_staff or user.is_superuser %}
+                            <li><a class="dropdown-item" href="{% url 'books:manage_borrow_requests' %}"><i class="fas fa-tasks me-2"></i>Manage Requests</a></li>
+                        {% elif user.groups.all|length > 0 %}
+                            {% for group in user.groups.all %}
+                                {% if group.name == 'Librarian' or group.name == 'Library Admin' %}
+                                    <li><a class="dropdown-item" href="{% url 'books:manage_borrow_requests' %}"><i class="fas fa-tasks me-2"></i>Manage Requests</a></li>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
                         {% if user.is_staff %}
-                            <li><a class="dropdown-item" href="/admin"><i class="fas fa-cog me-2"></i>Admin</a></li>
+                            <li><a class="dropdown-item" href="/admin"><i class="fas fa-shield-alt me-2"></i>Admin</a></li>
                         {% endif %}
                     </ul>
                 </div>
@@ -370,6 +857,102 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Honor Board Section -->
+            {% if honor_board %}
+            <div class="row my-5">
+                <div class="col-12">
+                    <div class="honor-section">
+                        <div class="text-center mb-5">
+                            <h2 class="honor-title" style="font-family: 'Playfair Display', serif; font-weight: 600; color: #2c3e50;">
+                                <i class="fas fa-trophy me-3" style="color: #f39c12;"></i>
+                                📚 Reading Champions Hall of Fame
+                            </h2>
+                            <p class="lead text-muted">Celebrating our most dedicated readers and knowledge seekers</p>
+                        </div>
+                        
+                        <div class="row g-4 justify-content-center">
+                            {% for reader in honor_board %}
+                            <div class="col-lg-4 col-md-6">
+                                <div class="honor-card rank-{{ reader.rank }}">
+                                    <div class="honor-badge">
+                                        <div class="rank-circle" style="background: {{ reader.achievement.color }}; background: linear-gradient(135deg, {{ reader.achievement.color }}, {{ reader.achievement.color }}88);">
+                                            <span class="rank-number">#{{ reader.rank }}</span>
+                                        </div>
+                                        <div class="medal-icon">
+                                            {% if reader.rank == 1 %}
+                                                🥇
+                                            {% elif reader.rank == 2 %}
+                                                🥈
+                                            {% else %}
+                                                🥉
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="honor-content">
+                                        <div class="reader-avatar">
+                                            {% if reader.user.profile_image %}
+                                                <img src="{{ reader.user.profile_image.url }}" alt="{{ reader.user.user.get_full_name|default:reader.user.user.username }}" class="avatar-img">
+                                            {% else %}
+                                                <div class="avatar-placeholder">
+                                                    <i class="fas fa-user"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <h4 class="reader-name">{{ reader.user.user.get_full_name|default:reader.user.user.username|truncatechars:20 }}</h4>
+                                        <p class="achievement-title">{{ reader.achievement.title }}</p>
+                                        <p class="achievement-desc">{{ reader.achievement.description }}</p>
+                                        
+                                        <div class="reading-stats">
+                                            <div class="stat-row">
+                                                <div class="stat-item">
+                                                    <span class="stat-number">{{ reader.total_borrowed }}</span>
+                                                    <span class="stat-label">Books Read</span>
+                                                </div>
+                                                <div class="stat-item">
+                                                    <span class="stat-number">{{ reader.reading_score }}</span>
+                                                    <span class="stat-label">Reading Score</span>
+                                                </div>
+                                            </div>
+                                            <div class="stat-row">
+                                                <div class="stat-item">
+                                                    <span class="stat-number">{{ reader.completion_rate }}%</span>
+                                                    <span class="stat-label">Completion Rate</span>
+                                                </div>
+                                                <div class="stat-item">
+                                                    <span class="stat-number">{{ reader.reading_streak }}</span>
+                                                    <span class="stat-label">Month Streak</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        {% if reader.is_perfect_reader %}
+                                        <div class="perfect-reader-badge">
+                                            <i class="fas fa-star"></i> Perfect Reader
+                                        </div>
+                                        {% endif %}
+                                        
+                                        <div class="progress-bar-container">
+                                            <div class="progress-bar" style="width: {{ reader.completion_rate }}%; background: {{ reader.achievement.color }};"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <p class="text-muted">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Rankings are updated daily based on reading activity, completion rates, and community engagement.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
 
             <!-- Features Section -->
             <div class="row g-4 my-5">

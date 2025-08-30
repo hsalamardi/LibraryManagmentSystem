@@ -8,15 +8,16 @@ from django.db import models
 from datetime import date, timedelta
 import json
 
-from .decorators import librarian_required, LibrarianRequiredMixin
+from .decorators import librarian_required, LibrarianRequiredMixin, is_librarian, is_admin
 from .reports import LibraryReports
 from .models import Book, Borrower, BookReservation
 from library_users.models import UserProfileinfo
+from django.shortcuts import redirect
 
 
-@method_decorator(librarian_required, name='dispatch')
+@method_decorator(login_required, name='dispatch')
 class DashboardView(TemplateView):
-    """Main dashboard view for librarians and admins"""
+    """Main dashboard view for all authenticated users with comprehensive analytics"""
     template_name = 'books/dashboard.html'
     
     def get_context_data(self, **kwargs):
@@ -32,15 +33,15 @@ class DashboardView(TemplateView):
         return context
     
     def get_chart_data(self):
-        """Prepare data for charts"""
+        """Prepare comprehensive data for charts and analytics"""
         # Books by language chart
         books_by_language = Book.objects.values('language').annotate(
             count=Count('id')
-        ).order_by('-count')[:5]
+        ).order_by('-count')[:8]
         
-        # Monthly borrowings for the last 6 months
+        # Monthly borrowings for the last 12 months
         monthly_data = []
-        for i in range(6):
+        for i in range(12):
             target_date = date.today().replace(day=1) - timedelta(days=i*30)
             month_stats = LibraryReports.get_monthly_statistics(
                 target_date.year, target_date.month
@@ -48,7 +49,9 @@ class DashboardView(TemplateView):
             monthly_data.append({
                 'month': target_date.strftime('%b %Y'),
                 'borrowings': month_stats['monthly_borrowings'],
-                'returns': month_stats['monthly_returns']
+                'returns': month_stats['monthly_returns'],
+                'new_users': month_stats['new_users'],
+                'new_books': month_stats['new_books']
             })
         
         # User type distribution
@@ -56,10 +59,77 @@ class DashboardView(TemplateView):
             count=Count('id')
         ).order_by('-count')
         
+        # Books by genre/category (using main_class as category)
+        books_by_category = Book.objects.values('main_class').annotate(
+            count=Count('id')
+        ).order_by('-count')[:10]
+        
+        # Reading trends - books borrowed by month
+        reading_trends = []
+        for i in range(6):
+            target_date = date.today().replace(day=1) - timedelta(days=i*30)
+            borrowings_count = Borrower.objects.filter(
+                borrow_date__year=target_date.year,
+                borrow_date__month=target_date.month
+            ).count()
+            reading_trends.append({
+                'month': target_date.strftime('%b'),
+                'count': borrowings_count
+            })
+        
+        # Popular authors (top 10)
+        popular_authors = Book.objects.values('author').annotate(
+            borrow_count=Count('borrowings')
+        ).filter(borrow_count__gt=0).order_by('-borrow_count')[:10]
+        
+        # Book condition distribution
+        book_conditions = Book.objects.values('condition').annotate(
+            count=Count('id')
+        ).order_by('-count')
+        
+        # Weekly activity (last 4 weeks)
+        weekly_activity = []
+        for i in range(4):
+            week_start = date.today() - timedelta(days=(i+1)*7)
+            week_end = week_start + timedelta(days=6)
+            
+            weekly_borrowings = Borrower.objects.filter(
+                borrow_date__range=[week_start, week_end]
+            ).count()
+            
+            weekly_returns = Borrower.objects.filter(
+                return_date__range=[week_start, week_end]
+            ).count()
+            
+            weekly_activity.append({
+                'week': f'Week {4-i}',
+                'borrowings': weekly_borrowings,
+                'returns': weekly_returns
+            })
+        
+        # User engagement metrics
+        total_users = UserProfileinfo.objects.filter(status='active').count()
+        users_with_books = UserProfileinfo.objects.filter(current_books_count__gt=0).count()
+        engagement_rate = (users_with_books / max(total_users, 1)) * 100
+        
+        # Reading completion rate
+        total_borrowings = Borrower.objects.count()
+        completed_borrowings = Borrower.objects.filter(status='returned').count()
+        completion_rate = (completed_borrowings / max(total_borrowings, 1)) * 100
+        
         return {
             'books_by_language': list(books_by_language),
             'monthly_borrowings': list(reversed(monthly_data)),
             'user_types': list(user_types),
+            'books_by_category': list(books_by_category),
+            'reading_trends': list(reversed(reading_trends)),
+            'popular_authors': list(popular_authors),
+            'book_conditions': list(book_conditions),
+            'weekly_activity': list(reversed(weekly_activity)),
+            'engagement_rate': round(engagement_rate, 1),
+            'completion_rate': round(completion_rate, 1),
+            'total_books_borrowed': total_borrowings,
+            'active_readers': users_with_books
         }
 
 
@@ -248,6 +318,19 @@ def user_dashboard(request):
         due_date__gte=date.today()
     )
     
+    # Calculate available books (max allowed minus currently borrowed)
+    available_books = user_profile.max_books_allowed - user_profile.current_books_count
+    
+    # Calculate borrowing capacity percentage
+    if user_profile.max_books_allowed > 0:
+        borrowing_percentage = (user_profile.current_books_count / user_profile.max_books_allowed) * 100
+    else:
+        borrowing_percentage = 0
+    
+    # Calculate dates for template comparisons
+    today = date.today()
+    due_soon_date = today + timedelta(days=3)
+    
     context = {
         'user_profile': user_profile,
         'current_borrowings': current_borrowings,
@@ -255,6 +338,22 @@ def user_dashboard(request):
         'borrowing_history': borrowing_history,
         'overdue_books': overdue_books,
         'books_due_soon': books_due_soon,
+        'available_books': available_books,
+        'borrowing_percentage': borrowing_percentage,
+        'today': today,
+        'due_soon_date': due_soon_date,
     }
     
     return render(request, 'books/user_dashboard.html', context)
+
+
+@login_required
+def dashboard_redirect(request):
+    """Redirect users to appropriate dashboard based on their role"""
+    # Check if user is librarian or admin
+    if is_librarian(request.user) or is_admin(request.user):
+        # Redirect to admin dashboard
+        return redirect('books:admin_dashboard')
+    else:
+        # Redirect to user dashboard
+        return redirect('books:user_dashboard')

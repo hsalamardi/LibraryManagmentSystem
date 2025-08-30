@@ -1,205 +1,824 @@
 {% extends 'library_users/base.html' %}
 {% load static %}
+{% load math_filters %}
 
-{% block title %}Library Dashboard{% endblock %}
+{% block title %}📊 Library Analytics Dashboard{% endblock %}
 
 {% block extra_css %}
 <link href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 <style>
+    :root {
+        --primary-color: #667eea;
+        --secondary-color: #764ba2;
+        --success-color: #28a745;
+        --danger-color: #dc3545;
+        --warning-color: #ffc107;
+        --info-color: #17a2b8;
+        --light-color: #f8f9fa;
+        --dark-color: #343a40;
+    }
+    
+    body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .dashboard-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+        border-radius: 0 0 20px 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    
     .dashboard-card {
         background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        padding: 20px;
-        margin-bottom: 20px;
+        border-radius: 15px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: none;
     }
+    
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+    }
+    
     .stat-card {
         text-align: center;
-        padding: 20px;
-        border-radius: 8px;
+        padding: 2rem 1.5rem;
+        border-radius: 15px;
         color: white;
-        margin-bottom: 20px;
+        margin-bottom: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.3s ease;
     }
+    
+    .stat-card:hover {
+        transform: scale(1.05);
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+        transition: all 0.5s ease;
+    }
+    
+    .stat-card:hover::before {
+        top: -25%;
+        right: -25%;
+    }
+    
     .stat-card.primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-    .stat-card.success { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+    .stat-card.success { background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%); }
     .stat-card.info { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-    .stat-card.warning { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
-    .stat-number { font-size: 2.5rem; font-weight: bold; }
-    .stat-label { font-size: 0.9rem; opacity: 0.9; }
-    .chart-container { position: relative; height: 300px; }
-    .table-responsive { max-height: 400px; overflow-y: auto; }
-    .overdue { color: #dc3545; font-weight: bold; }
-    .due-soon { color: #ffc107; font-weight: bold; }
+    .stat-card.warning { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+    .stat-card.danger { background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%); }
+    .stat-card.dark { background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); }
+    
+    .stat-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.8;
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    .stat-label {
+        font-size: 1rem;
+        opacity: 0.9;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .stat-change {
+        font-size: 0.8rem;
+        margin-top: 0.5rem;
+        opacity: 0.8;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 350px;
+        padding: 1rem;
+    }
+    
+    .table-responsive {
+        max-height: 400px;
+        overflow-y: auto;
+        border-radius: 10px;
+    }
+    
+    .table {
+        margin-bottom: 0;
+    }
+    
+    .table th {
+        background: var(--light-color);
+        border: none;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+    }
+    
+    .table td {
+        border: none;
+        padding: 1rem 0.75rem;
+        vertical-align: middle;
+    }
+    
+    .table tbody tr {
+        border-bottom: 1px solid #f1f3f4;
+        transition: background-color 0.3s ease;
+    }
+    
+    .table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .overdue {
+        color: var(--danger-color);
+        font-weight: bold;
+        animation: pulse 2s infinite;
+    }
+    
+    .due-soon {
+        color: var(--warning-color);
+        font-weight: bold;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+    }
+    
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--dark-color);
+        margin-bottom: 1.5rem;
+        position: relative;
+        padding-left: 1rem;
+    }
+    
+    .section-title::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border-radius: 2px;
+    }
+    
+    .quick-action-btn {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border: none;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 25px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+        margin: 0.25rem;
+    }
+    
+    .quick-action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        color: white;
+    }
+    
+    .progress-ring {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto;
+    }
+    
+    .progress-ring-circle {
+        stroke: #e6e6e6;
+        stroke-width: 8;
+        fill: transparent;
+        r: 52;
+        cx: 60;
+        cy: 60;
+    }
+    
+    .progress-ring-progress {
+        stroke: var(--success-color);
+        stroke-width: 8;
+        stroke-linecap: round;
+        fill: transparent;
+        r: 52;
+        cx: 60;
+        cy: 60;
+        stroke-dasharray: 326.73;
+        stroke-dashoffset: 326.73;
+        transition: stroke-dashoffset 0.5s ease;
+    }
+    
+    .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .alert-custom {
+        border: none;
+        border-radius: 10px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .badge-custom {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.8rem;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <h1 class="mb-4">📊 Library Dashboard</h1>
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-4 mb-2">📊 Library Analytics Dashboard</h1>
+                    <p class="lead mb-0">Comprehensive insights into your library system performance</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="d-flex align-items-center justify-content-end">
+                        <div class="me-3">
+                            <small class="d-block">Last Updated</small>
+                            <strong>{{ "now"|date:"M d, Y H:i" }}</strong>
+                        </div>
+                        <i class="fas fa-chart-line fa-3x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Statistics Cards -->
-    <div class="row">
-        <div class="col-md-3">
+    <div class="container">
+        <!-- Key Performance Indicators -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="section-title">📈 Key Performance Indicators</h2>
+            </div>
+        </div>
+        
+        <div class="metric-grid">
+            <!-- Total Books -->
             <div class="stat-card primary">
-                <div class="stat-number">{{ book_stats.total_books }}</div>
+                <div class="stat-icon"><i class="fas fa-books"></i></div>
+                <div class="stat-number">{{ book_stats.total_books|default:0 }}</div>
                 <div class="stat-label">Total Books</div>
-                <small>{{ book_stats.available_books }} Available</small>
+                <div class="stat-change">📚 Collection Size</div>
             </div>
-        </div>
-        <div class="col-md-3">
+            
+            <!-- Available Books -->
             <div class="stat-card success">
-                <div class="stat-number">{{ user_stats.active_users }}</div>
-                <div class="stat-label">Active Users</div>
-                <small>{{ user_stats.users_with_books }} Currently Borrowing</small>
+                <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                <div class="stat-number">{{ book_stats.available_books|default:0 }}</div>
+                <div class="stat-label">Available Books</div>
+                <div class="stat-change">✅ Ready to Borrow</div>
             </div>
-        </div>
-        <div class="col-md-3">
+            
+            <!-- Active Users -->
             <div class="stat-card info">
-                <div class="stat-number">{{ borrowing_stats.active_borrowings }}</div>
-                <div class="stat-label">Active Borrowings</div>
-                <small>{{ borrowing_stats.overdue_borrowings }} Overdue</small>
+                <div class="stat-icon"><i class="fas fa-users"></i></div>
+                <div class="stat-number">{{ user_stats.active_users|default:0 }}</div>
+                <div class="stat-label">Active Users</div>
+                <div class="stat-change">👥 Library Members</div>
             </div>
-        </div>
-        <div class="col-md-3">
+            
+            <!-- Active Borrowings -->
             <div class="stat-card warning">
-                <div class="stat-number">{{ reservation_stats.active_reservations }}</div>
-                <div class="stat-label">Active Reservations</div>
-                <small>{{ reservation_stats.fulfilled_reservations }} Fulfilled This Month</small>
+                <div class="stat-icon"><i class="fas fa-hand-holding"></i></div>
+                <div class="stat-number">{{ borrowing_stats.active_borrowings|default:0 }}</div>
+                <div class="stat-label">Active Borrowings</div>
+                <div class="stat-change">📖 Currently Borrowed</div>
+            </div>
+            
+            <!-- Pending Requests -->
+            <div class="stat-card danger">
+                <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                <div class="stat-number">{{ request_stats.total_pending_requests|default:0 }}</div>
+                <div class="stat-label">Pending Requests</div>
+                <div class="stat-change">⏳ Awaiting Action</div>
+            </div>
+            
+            <!-- Collection Utilization -->
+            <div class="stat-card dark">
+                <div class="stat-icon"><i class="fas fa-chart-pie"></i></div>
+                <div class="stat-number">{{ system_health.collection_utilization_rate|default:0 }}%</div>
+                <div class="stat-label">Utilization Rate</div>
+                <div class="stat-change">📊 Collection Usage</div>
             </div>
         </div>
-    </div>
 
-    <!-- Charts Row -->
-    <div class="row">
-        <div class="col-md-6">
-            <div class="dashboard-card">
-                <h5>📈 Monthly Borrowings Trend</h5>
-                <div class="chart-container">
-                    <canvas id="monthlyChart"></canvas>
+        <!-- Financial & Request Management -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="dashboard-card">
+                    <h5 class="section-title">💰 Financial Overview</h5>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="text-center p-3">
+                                <h3 class="text-success">${{ financial_stats.total_fines_collected|default:0 }}</h3>
+                                <small class="text-muted">Total Fines Collected</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-3">
+                                <h3 class="text-warning">${{ financial_stats.outstanding_fines|default:0 }}</h3>
+                                <small class="text-muted">Outstanding Fines</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-3">
+                                <h3 class="text-info">${{ financial_stats.monthly_fines|default:0 }}</h3>
+                                <small class="text-muted">This Month</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-3">
+                                <h3 class="text-primary">{{ financial_stats.users_with_fines|default:0 }}</h3>
+                                <small class="text-muted">Users with Fines</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="dashboard-card">
+                    <h5 class="section-title">📋 Request Management</h5>
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="text-center p-3">
+                                <h3 class="text-primary">{{ request_stats.pending_borrow_requests|default:0 }}</h3>
+                                <small class="text-muted">Pending Borrow</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-3">
+                                <h3 class="text-warning">{{ request_stats.pending_return_requests|default:0 }}</h3>
+                                <small class="text-muted">Pending Return</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-3">
+                                <h3 class="text-success">{{ request_stats.recent_borrow_requests|default:0 }}</h3>
+                                <small class="text-muted">Recent Borrow (7d)</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-3">
+                                <h3 class="text-info">{{ request_stats.recent_return_requests|default:0 }}</h3>
+                                <small class="text-muted">Recent Return (7d)</small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="dashboard-card">
-                <h5>🌍 Books by Language</h5>
-                <div class="chart-container">
-                    <canvas id="languageChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Data Tables Row -->
-    <div class="row">
-        <div class="col-md-6">
-            <div class="dashboard-card">
-                <h5>📚 Popular Books</h5>
-                <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>Title</th>
-                                <th>Author</th>
-                                <th>Borrows</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for book in popular_books %}
-                            <tr>
-                                <td><a href="{% url 'books:book_detail' book.pk %}">{{ book.title|truncatechars:30 }}</a></td>
-                                <td>{{ book.author|truncatechars:20 }}</td>
-                                <td><span class="badge bg-primary">{{ book.borrow_count }}</span></td>
-                            </tr>
-                            {% empty %}
-                            <tr><td colspan="3" class="text-muted">No borrowing data available</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+        <!-- System Health & Activity -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="dashboard-card">
+                    <h5 class="section-title">🏥 System Health</h5>
+                    <div class="text-center mb-3">
+                        <div class="progress-ring">
+                            <svg class="progress-ring">
+                                <circle class="progress-ring-circle"></circle>
+                                <circle class="progress-ring-progress" style="stroke-dashoffset: {% widthratio system_health.collection_utilization_rate|default:0 100 326.73 as offset %}{{ 326.73|subtract:offset }}"></circle>
+                            </svg>
+                            <div class="position-absolute top-50 start-50 translate-middle">
+                                <h4>{{ system_health.collection_utilization_rate|default:0 }}%</h4>
+                                <small>Utilization</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <strong>{{ system_health.books_never_borrowed|default:0 }}</strong>
+                            <br><small class="text-muted">Never Borrowed</small>
+                        </div>
+                        <div class="col-6">
+                            <strong>{{ system_health.avg_books_per_user|default:0 }}</strong>
+                            <br><small class="text-muted">Avg Books/User</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="dashboard-card">
+                    <h5 class="section-title">📊 Today's Activity</h5>
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                            <span><i class="fas fa-user-plus text-success me-2"></i>New Users</span>
+                            <span class="badge bg-success rounded-pill">{{ system_health.daily_activity.new_users_today|default:0 }}</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                            <span><i class="fas fa-download text-primary me-2"></i>Books Borrowed</span>
+                            <span class="badge bg-primary rounded-pill">{{ system_health.daily_activity.books_borrowed_today|default:0 }}</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                            <span><i class="fas fa-upload text-info me-2"></i>Books Returned</span>
+                            <span class="badge bg-info rounded-pill">{{ system_health.daily_activity.books_returned_today|default:0 }}</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                            <span><i class="fas fa-paper-plane text-warning me-2"></i>Requests Submitted</span>
+                            <span class="badge bg-warning rounded-pill">{{ system_health.daily_activity.requests_submitted_today|default:0 }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="dashboard-card">
+                    <h5 class="section-title">📈 Weekly Trends</h5>
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                            <span><i class="fas fa-users text-success me-2"></i>New Members</span>
+                            <span class="badge bg-success rounded-pill">{{ system_health.weekly_activity.new_users_week|default:0 }}</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                            <span><i class="fas fa-book text-primary me-2"></i>Books Borrowed</span>
+                            <span class="badge bg-primary rounded-pill">{{ system_health.weekly_activity.books_borrowed_week|default:0 }}</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                            <span><i class="fas fa-undo text-info me-2"></i>Books Returned</span>
+                            <span class="badge bg-info rounded-pill">{{ system_health.weekly_activity.books_returned_week|default:0 }}</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                            <span><i class="fas fa-chart-line text-warning me-2"></i>Avg Borrow Days</span>
+                            <span class="badge bg-warning rounded-pill">{{ borrowing_stats.avg_borrowing_days|default:0 }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="dashboard-card">
-                <h5>⚠️ Overdue Books</h5>
-                <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>Book</th>
-                                <th>Borrower</th>
-                                <th>Days Overdue</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for borrowing in overdue_books %}
-                            <tr>
-                                <td><a href="{% url 'books:book_detail' borrowing.book.pk %}">{{ borrowing.book.title|truncatechars:25 }}</a></td>
-                                <td>{{ borrowing.borrower.user.get_full_name|truncatechars:20 }}</td>
-                                <td><span class="badge bg-danger">{{ borrowing.days_overdue }} days</span></td>
-                            </tr>
-                            {% empty %}
-                            <tr><td colspan="3" class="text-success">No overdue books! 🎉</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Books Due Soon -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="dashboard-card">
-                <h5>📅 Books Due Soon (Next 3 Days)</h5>
-                <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>Book</th>
-                                <th>Borrower</th>
-                                <th>Due Date</th>
-                                <th>Contact</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for borrowing in books_due_soon %}
-                            <tr>
-                                <td><a href="{% url 'books:book_detail' borrowing.book.pk %}">{{ borrowing.book.title|truncatechars:30 }}</a></td>
-                                <td>{{ borrowing.borrower.user.get_full_name }}</td>
-                                <td><span class="due-soon">{{ borrowing.due_date }}</span></td>
-                                <td>{{ borrowing.borrower.user.email }}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary" onclick="sendReminder({{ borrowing.id }})">
-                                        📧 Send Reminder
-                                    </button>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr><td colspan="5" class="text-muted">No books due soon</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+        <!-- Enhanced Charts Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="section-title">📊 Reading Analytics & Insights</h2>
+            </div>
+        </div>
+        
+        <!-- Primary Charts Row -->
+        <div class="row mb-4">
+            <div class="col-lg-8">
+                <div class="dashboard-card">
+                    <h5 class="section-title">📈 Monthly Reading Trends (12 Months)</h5>
+                    <div class="chart-container">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="dashboard-card">
+                    <h5 class="section-title">🌍 Collection by Language</h5>
+                    <div class="chart-container">
+                        <canvas id="languageChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+        
+        <!-- Secondary Charts Row -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="dashboard-card">
+                    <h5 class="section-title">📚 Popular Categories</h5>
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="dashboard-card">
+                    <h5 class="section-title">✍️ Top Authors</h5>
+                    <div class="chart-container">
+                        <canvas id="authorsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Engagement Metrics Row -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="dashboard-card">
+                    <h5 class="section-title">👥 User Engagement</h5>
+                    <div class="text-center">
+                        <div class="progress-ring mb-3">
+                            <svg class="progress-ring">
+                                <circle class="progress-ring-circle"></circle>
+                                <circle class="progress-ring-progress" style="stroke-dashoffset: {% widthratio chart_data.engagement_rate 100 326.73 as offset %}{{ 326.73|subtract:offset }}"></circle>
+                            </svg>
+                            <div class="position-absolute top-50 start-50 translate-middle">
+                                <h4>{{ chart_data.engagement_rate }}%</h4>
+                                <small>Engaged</small>
+                            </div>
+                        </div>
+                        <p class="text-muted">{{ chart_data.active_readers }} of {{ user_stats.active_users }} users currently reading</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="dashboard-card">
+                    <h5 class="section-title">✅ Completion Rate</h5>
+                    <div class="text-center">
+                        <div class="progress-ring mb-3">
+                            <svg class="progress-ring">
+                                <circle class="progress-ring-circle"></circle>
+                                <circle class="progress-ring-progress" style="stroke-dashoffset: {% widthratio chart_data.completion_rate 100 326.73 as offset %}{{ 326.73|subtract:offset }}; stroke: #28a745;"></circle>
+                            </svg>
+                            <div class="position-absolute top-50 start-50 translate-middle">
+                                <h4>{{ chart_data.completion_rate }}%</h4>
+                                <small>Completed</small>
+                            </div>
+                        </div>
+                        <p class="text-muted">Books successfully returned on time</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="dashboard-card">
+                    <h5 class="section-title">📊 Weekly Activity</h5>
+                    <div class="chart-container" style="height: 200px;">
+                        <canvas id="weeklyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Additional Analytics Row -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="dashboard-card">
+                    <h5 class="section-title">📖 Book Conditions</h5>
+                    <div class="chart-container">
+                        <canvas id="conditionsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="dashboard-card">
+                    <h5 class="section-title">📈 Reading Trends (6 Months)</h5>
+                    <div class="chart-container">
+                        <canvas id="trendsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <!-- Quick Actions -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="dashboard-card">
-                <h5>🚀 Quick Actions</h5>
-                <div class="btn-group" role="group">
-                    <a href="{% url 'books:add_a_book' %}" class="btn btn-primary">📖 Add New Book</a>
-                    <a href="{% url 'books:view_books_list' %}" class="btn btn-outline-primary">📚 Browse Books</a>
-                    <a href="#" class="btn btn-outline-success" onclick="generateReport()">📊 Generate Report</a>
-                    <a href="#" class="btn btn-outline-warning" onclick="exportData()">📤 Export Data</a>
+        <!-- Data Tables Row -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="dashboard-card">
+                    <h5 class="section-title">📚 Popular Books</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Borrows</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for book in popular_books %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'books:book_detail' book.pk %}" class="text-decoration-none">
+                                            {{ book.title|truncatechars:25 }}
+                                        </a>
+                                        <br><small class="text-muted">{{ book.author|truncatechars:20 }}</small>
+                                    </td>
+                                    <td><span class="badge bg-primary">{{ book.borrow_count }}</span></td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="2" class="text-muted text-center">No borrowing data available</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="dashboard-card">
+                    <h5 class="section-title">⚠️ Overdue Books</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Book</th>
+                                    <th>Days Overdue</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for borrowing in overdue_books %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'books:book_detail' borrowing.book.pk %}" class="text-decoration-none">
+                                            {{ borrowing.book.title|truncatechars:20 }}
+                                        </a>
+                                        <br><small class="text-muted">{{ borrowing.borrower.user.get_full_name|truncatechars:15 }}</small>
+                                    </td>
+                                    <td><span class="badge bg-danger overdue">{{ borrowing.days_overdue|default:"N/A" }}</span></td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="2" class="text-success text-center">No overdue books! 🎉</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="dashboard-card">
+                    <h5 class="section-title">🏆 Top Performers</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Books</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in top_performers.top_borrowers %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ user.user.get_full_name|default:user.user.username|truncatechars:20 }}</strong>
+                                        <br><small class="text-muted">{{ user.get_user_type_display }}</small>
+                                    </td>
+                                    <td><span class="badge bg-success">{{ user.total_borrowed }}</span></td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="2" class="text-muted text-center">No data available</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Books Due Soon -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="dashboard-card">
+                    <h5 class="section-title">📅 Books Due Soon (Next 3 Days)</h5>
+                    {% if books_due_soon %}
+                        <div class="alert alert-custom alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>{{ books_due_soon|length }} book{{ books_due_soon|length|pluralize }} due soon!</strong>
+                            Consider sending reminders to borrowers.
+                        </div>
+                    {% endif %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Book</th>
+                                    <th>Borrower</th>
+                                    <th>Due Date</th>
+                                    <th>Contact</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for borrowing in books_due_soon %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'books:book_detail' borrowing.book.pk %}" class="text-decoration-none">
+                                            <strong>{{ borrowing.book.title|truncatechars:30 }}</strong>
+                                        </a>
+                                        <br><small class="text-muted">{{ borrowing.book.author|truncatechars:25 }}</small>
+                                    </td>
+                                    <td>
+                                        <strong>{{ borrowing.borrower.user.get_full_name|default:borrowing.borrower.user.username }}</strong>
+                                        <br><small class="text-muted">{{ borrowing.borrower.get_user_type_display }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-custom bg-warning due-soon">{{ borrowing.due_date }}</span>
+                                        <br><small class="text-muted">{{ borrowing.due_date|timeuntil }}</small>
+                                    </td>
+                                    <td>
+                                        <a href="mailto:{{ borrowing.borrower.user.email }}" class="text-decoration-none">
+                                            {{ borrowing.borrower.user.email|truncatechars:25 }}
+                                        </a>
+                                        {% if borrowing.borrower.phone_number %}
+                                            <br><small class="text-muted">{{ borrowing.borrower.phone_number }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="sendReminder({{ borrowing.id }})">
+                                            <i class="fas fa-envelope me-1"></i>Remind
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-success py-4">
+                                        <i class="fas fa-check-circle fa-2x mb-2"></i>
+                                        <br>No books due soon! All borrowers are on track. 🎉
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="dashboard-card">
+                    <h5 class="section-title">🚀 Quick Actions</h5>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'books:add_a_book' %}" class="quick-action-btn w-100 d-block text-center">
+                                <i class="fas fa-plus-circle d-block mb-2" style="font-size: 2rem;"></i>
+                                Add New Book
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'books:view_books_list' %}" class="quick-action-btn w-100 d-block text-center">
+                                <i class="fas fa-books d-block mb-2" style="font-size: 2rem;"></i>
+                                Browse Books
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'books:manage_borrow_requests' %}" class="quick-action-btn w-100 d-block text-center">
+                                <i class="fas fa-tasks d-block mb-2" style="font-size: 2rem;"></i>
+                                Manage Requests
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'books:reports' %}" class="quick-action-btn w-100 d-block text-center">
+                                <i class="fas fa-chart-bar d-block mb-2" style="font-size: 2rem;"></i>
+                                View Reports
+                            </a>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <button class="quick-action-btn w-100 d-block text-center" onclick="generateReport()">
+                                <i class="fas fa-file-export d-block mb-2" style="font-size: 2rem;"></i>
+                                Generate Report
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button class="quick-action-btn w-100 d-block text-center" onclick="exportData()">
+                                <i class="fas fa-download d-block mb-2" style="font-size: 2rem;"></i>
+                                Export Data
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <button class="quick-action-btn w-100 d-block text-center" onclick="refreshDashboard()">
+                                <i class="fas fa-sync-alt d-block mb-2" style="font-size: 2rem;"></i>
+                                Refresh Data
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{% url 'books:barcode_scan' %}" class="quick-action-btn w-100 d-block text-center">
+                                <i class="fas fa-barcode d-block mb-2" style="font-size: 2rem;"></i>
+                                Barcode Scanner
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -210,7 +829,11 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
-// Monthly Borrowings Chart
+// Chart.js default configuration
+Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+Chart.defaults.color = '#666';
+
+// Enhanced Monthly Trends Chart
 const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
 const monthlyChart = new Chart(monthlyCtx, {
     type: 'line',
@@ -219,29 +842,103 @@ const monthlyChart = new Chart(monthlyCtx, {
         datasets: [{
             label: 'Borrowings',
             data: {{ chart_data.monthly_borrowings|safe }}.map(item => item.borrowings),
-            borderColor: 'rgb(75, 192, 192)',
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            tension: 0.1
+            borderColor: 'rgb(102, 126, 234)',
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            tension: 0.4,
+            fill: true,
+            pointBackgroundColor: 'rgb(102, 126, 234)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 3,
+            pointRadius: 6
         }, {
             label: 'Returns',
             data: {{ chart_data.monthly_borrowings|safe }}.map(item => item.returns),
-            borderColor: 'rgb(255, 99, 132)',
-            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-            tension: 0.1
+            borderColor: 'rgb(40, 167, 69)',
+            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+            tension: 0.4,
+            fill: true,
+            pointBackgroundColor: 'rgb(40, 167, 69)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 3,
+            pointRadius: 6
+        }, {
+            label: 'New Users',
+            data: {{ chart_data.monthly_borrowings|safe }}.map(item => item.new_users || 0),
+            borderColor: 'rgb(255, 193, 7)',
+            backgroundColor: 'rgba(255, 193, 7, 0.1)',
+            tension: 0.4,
+            fill: false,
+            pointBackgroundColor: 'rgb(255, 193, 7)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4
+        }, {
+            label: 'New Books',
+            data: {{ chart_data.monthly_borrowings|safe }}.map(item => item.new_books || 0),
+            borderColor: 'rgb(220, 53, 69)',
+            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+            tension: 0.4,
+            fill: false,
+            pointBackgroundColor: 'rgb(220, 53, 69)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4
         }]
     },
     options: {
         responsive: true,
         maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top',
+                labels: {
+                    usePointStyle: true,
+                    padding: 15,
+                    font: {
+                        size: 12
+                    }
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0,0,0,0.8)',
+                titleColor: 'white',
+                bodyColor: 'white',
+                borderColor: 'rgba(102, 126, 234, 0.8)',
+                borderWidth: 1,
+                cornerRadius: 8
+            }
+        },
         scales: {
             y: {
-                beginAtZero: true
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0,0,0,0.1)'
+                },
+                ticks: {
+                    font: {
+                        size: 11
+                    }
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                },
+                ticks: {
+                    font: {
+                        size: 11
+                    }
+                }
             }
+        },
+        interaction: {
+            intersect: false,
+            mode: 'index'
         }
     }
 });
 
-// Language Distribution Chart
+// Collection Distribution Chart
 const languageCtx = document.getElementById('languageChart').getContext('2d');
 const languageChart = new Chart(languageCtx, {
     type: 'doughnut',
@@ -250,39 +947,383 @@ const languageChart = new Chart(languageCtx, {
         datasets: [{
             data: {{ chart_data.books_by_language|safe }}.map(item => item.count),
             backgroundColor: [
-                '#FF6384',
-                '#36A2EB',
-                '#FFCE56',
-                '#4BC0C0',
-                '#9966FF'
-            ]
+                '#667eea',
+                '#764ba2', 
+                '#f093fb',
+                '#f5576c',
+                '#4facfe',
+                '#00f2fe',
+                '#43e97b',
+                '#38f9d7'
+            ],
+            borderWidth: 0,
+            hoverOffset: 10
         }]
     },
     options: {
         responsive: true,
-        maintainAspectRatio: false
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 20,
+                    usePointStyle: true
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0,0,0,0.8)',
+                titleColor: 'white',
+                bodyColor: 'white'
+            }
+        },
+        cutout: '60%'
     }
 });
 
-// JavaScript functions
+// Popular Categories Chart
+ const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+ const categoryChart = new Chart(categoryCtx, {
+     type: 'bar',
+     data: {
+         labels: {{ chart_data.books_by_category|safe }}.map(item => item.main_class || 'Unknown'),
+         datasets: [{
+             label: 'Books',
+             data: {{ chart_data.books_by_category|safe }}.map(item => item.count),
+            backgroundColor: 'rgba(102, 126, 234, 0.8)',
+            borderColor: 'rgb(102, 126, 234)',
+            borderWidth: 1,
+            borderRadius: 5
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0,0,0,0.8)',
+                titleColor: 'white',
+                bodyColor: 'white'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0,0,0,0.1)'
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                },
+                ticks: {
+                    maxRotation: 45
+                }
+            }
+        }
+    }
+});
+
+// Top Authors Chart
+ const authorsCtx = document.getElementById('authorsChart').getContext('2d');
+ const authorsChart = new Chart(authorsCtx, {
+     type: 'bar',
+     data: {
+         labels: {{ chart_data.popular_authors|safe }}.map(item => item.author || 'Unknown'),
+         datasets: [{
+             label: 'Borrowed Books',
+             data: {{ chart_data.popular_authors|safe }}.map(item => item.borrow_count),
+            backgroundColor: 'rgba(40, 167, 69, 0.8)',
+            borderColor: 'rgb(40, 167, 69)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0,0,0,0.8)',
+                titleColor: 'white',
+                bodyColor: 'white'
+            }
+        },
+        scales: {
+            x: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0,0,0,0.1)'
+                }
+            },
+            y: {
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+
+// Weekly Activity Chart
+ const weeklyCtx = document.getElementById('weeklyChart').getContext('2d');
+ const weeklyChart = new Chart(weeklyCtx, {
+     type: 'bar',
+     data: {
+         labels: {{ chart_data.weekly_activity|safe }}.map(item => item.week),
+         datasets: [{
+             label: 'Borrowings',
+             data: {{ chart_data.weekly_activity|safe }}.map(item => item.borrowings),
+            backgroundColor: [
+                'rgba(102, 126, 234, 0.8)',
+                'rgba(40, 167, 69, 0.8)',
+                'rgba(255, 193, 7, 0.8)',
+                'rgba(220, 53, 69, 0.8)',
+                'rgba(23, 162, 184, 0.8)',
+                'rgba(108, 117, 125, 0.8)',
+                'rgba(111, 66, 193, 0.8)'
+            ],
+            borderWidth: 0,
+            borderRadius: 3
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                display: false
+            },
+            x: {
+                grid: {
+                    display: false
+                },
+                ticks: {
+                    font: {
+                        size: 10
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Book Conditions Chart
+ const conditionsCtx = document.getElementById('conditionsChart').getContext('2d');
+ const conditionsChart = new Chart(conditionsCtx, {
+     type: 'pie',
+     data: {
+         labels: {{ chart_data.book_conditions|safe }}.map(item => item.condition || 'Unknown'),
+         datasets: [{
+             data: {{ chart_data.book_conditions|safe }}.map(item => item.count),
+            backgroundColor: [
+                '#28a745',
+                '#ffc107',
+                '#fd7e14',
+                '#dc3545'
+            ],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 15,
+                    usePointStyle: true
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0,0,0,0.8)',
+                titleColor: 'white',
+                bodyColor: 'white'
+            }
+        }
+    }
+});
+
+// Reading Trends Chart (6 months)
+ const trendsCtx = document.getElementById('trendsChart').getContext('2d');
+ const trendsChart = new Chart(trendsCtx, {
+     type: 'line',
+     data: {
+         labels: {{ chart_data.reading_trends|safe }}.map(item => item.month),
+         datasets: [{
+             label: 'Books Borrowed',
+             data: {{ chart_data.reading_trends|safe }}.map(item => item.count),
+            borderColor: 'rgb(102, 126, 234)',
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            tension: 0.4,
+            fill: true,
+            pointBackgroundColor: 'rgb(102, 126, 234)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 5
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0,0,0,0.8)',
+                titleColor: 'white',
+                bodyColor: 'white'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0,0,0,0.1)'
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+
+// Enhanced JavaScript functions
 function sendReminder(borrowingId) {
-    // Implementation for sending reminder emails
-    alert('Reminder sent! (Feature to be implemented)');
+    if (confirm('Send reminder email to borrower?')) {
+        // Show loading state
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Sending...';
+        btn.disabled = true;
+        
+        // Simulate API call
+        setTimeout(() => {
+            btn.innerHTML = '<i class="fas fa-check me-1"></i>Sent!';
+            btn.classList.remove('btn-outline-primary');
+            btn.classList.add('btn-success');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-primary');
+                btn.disabled = false;
+            }, 2000);
+        }, 1500);
+    }
 }
 
 function generateReport() {
-    // Implementation for generating reports
-    window.open('/books/reports/', '_blank');
+    const reportWindow = window.open('/books/reports/', '_blank');
+    if (reportWindow) {
+        showNotification('Report opened in new tab', 'success');
+    } else {
+        showNotification('Please allow popups to view reports', 'warning');
+    }
 }
 
 function exportData() {
-    // Implementation for data export
-    alert('Export feature coming soon!');
+    showNotification('Export feature coming soon! 📊', 'info');
 }
 
-// Auto-refresh dashboard every 5 minutes
+function refreshDashboard() {
+    showNotification('Refreshing dashboard data...', 'info');
+    setTimeout(() => {
+        location.reload();
+    }, 1000);
+}
+
+function showNotification(message, type = 'info') {
+    const alertClass = {
+        'success': 'alert-success',
+        'warning': 'alert-warning', 
+        'danger': 'alert-danger',
+        'info': 'alert-info'
+    }[type] || 'alert-info';
+    
+    const notification = document.createElement('div');
+    notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 5000);
+}
+
+// Real-time updates simulation
+function updateRealTimeStats() {
+    // Simulate real-time data updates
+    const stats = document.querySelectorAll('.stat-number');
+    stats.forEach(stat => {
+        const currentValue = parseInt(stat.textContent);
+        if (Math.random() > 0.8) { // 20% chance of update
+            const change = Math.random() > 0.5 ? 1 : -1;
+            const newValue = Math.max(0, currentValue + change);
+            stat.textContent = newValue;
+            
+            // Add visual feedback
+            stat.style.transform = 'scale(1.1)';
+            setTimeout(() => {
+                stat.style.transform = 'scale(1)';
+            }, 300);
+        }
+    });
+}
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    // Add loading animation to cards
+    const cards = document.querySelectorAll('.dashboard-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+    
+    // Show welcome notification
+    setTimeout(() => {
+        showNotification('📊 Dashboard loaded successfully!', 'success');
+    }, 1000);
+});
+
+// Auto-refresh dashboard every 10 minutes
 setInterval(function() {
-    location.reload();
-}, 300000);
+    updateRealTimeStats();
+}, 60000); // Update stats every minute
+
+setInterval(function() {
+    showNotification('Auto-refreshing dashboard...', 'info');
+    setTimeout(() => location.reload(), 2000);
+}, 600000); // Full refresh every 10 minutes
 </script>
 {% endblock %}

@@ -14,12 +14,14 @@ def user_in_group(group_name):
 
 def is_librarian(user):
     """Check if user is a librarian"""
-    return user.groups.filter(name__in=['Librarian', 'Library Admin']).exists()
+    # Allow superusers and users in Librarian or Library Admin groups
+    return user.is_superuser or user.groups.filter(name__in=['Librarian', 'Library Admin']).exists()
 
 
 def is_admin(user):
     """Check if user is a library admin"""
-    return user.groups.filter(name='Library Admin').exists()
+    # Allow superusers and users in Library Admin group
+    return user.is_superuser or user.groups.filter(name='Library Admin').exists()
 
 
 def is_member(user):
