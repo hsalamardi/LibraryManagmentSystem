@@ -43,7 +43,8 @@ steps:
     BORROWING_PERIOD_DAYS=${_BORROWING_PERIOD_DAYS},
     RESERVATION_PERIOD_DAYS=${_RESERVATION_PERIOD_DAYS},
     REDIS_URL=${_REDIS_URL}
-
+options:
+  logging: CLOUD_LOGGING_ONLY
 # Store images in Google Container Registry
 images:
 - 'gcr.io/$PROJECT_ID/library-management-system:$COMMIT_SHA'
