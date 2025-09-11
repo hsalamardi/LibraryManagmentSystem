@@ -1,8 +1,0 @@
-ERROR 2025-08-30 03:15:24,847 views 25284 19236 Failed to queue return confirmation email: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
-WARNING 2025-08-30 04:42:26,534 views 23568 22448 User haytham current_books_count is already 0 when returning book Sapiens: A Brief History of Humankind
-ERROR 2025-08-30 04:44:15,511 views 23568 22448 Failed to queue return confirmation email: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
-ERROR 2025-08-30 04:46:04,153 views 23568 22448 Failed to queue reservation notification: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
-ERROR 2025-08-30 04:47:22,714 views 23568 14384 Failed to queue return confirmation email: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
-ERROR 2025-08-30 05:03:50,996 views 22720 6468 Failed to queue return confirmation email: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
-ERROR 2025-08-30 05:05:39,719 views 22720 6468 Failed to queue reservation notification email: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
-ERROR 2025-08-30 06:59:25,173 views 13040 22624 Failed to queue return confirmation email: Error 10061 connecting to localhost:6379. No connection could be made because the target machine actively refused it.
