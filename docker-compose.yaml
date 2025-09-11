@@ -1,0 +1,374 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: library_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-database}
+      MYSQL_USER: ${MYSQL_USER:-db_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-password}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./my-db:/docker-entrypoint-initdb.d
+    networks:
+      - library_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 60s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    container_name: library_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - library_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    container_name: library_web
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    profiles:
+      - development
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    volumes:
+      # Mount media files for persistence
+      - media_data:/app/media
+      # Mount static files
+      - static_data:/app/staticfiles
+      # Mount logs
+      - logs_data:/app/logs
+    environment:
+      # Django Configuration
+      - DEBUG=False
+      - SECRET_KEY=django-insecure-change-this-in-production-very-long-secret-key-123456789
+      - ALLOWED_HOSTS=localhost,127.0.0.1,your-domain.com
+      - DJANGO_SETTINGS_MODULE=nta_library.settings
+      - PYTHONPATH=/app
+      
+      # Database Configuration
+      - DATABASE_URL=mysql://db_user:password@db:3306/database
+      
+      # Redis Configuration
+      - REDIS_URL=redis://redis:6379/0
+      
+      # Email Configuration
+      - EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+      - EMAIL_HOST=smtp.gmail.com
+      - EMAIL_PORT=587
+      - EMAIL_USE_TLS=True
+      - EMAIL_HOST_USER=your-email@gmail.com
+      - EMAIL_HOST_PASSWORD=your-app-password
+      - DEFAULT_FROM_EMAIL=your-email@gmail.com
+      
+      # Library Configuration
+      - LIBRARY_NAME=NTA Library
+      - LIBRARY_EMAIL=library@yourdomain.com
+      - LIBRARY_PHONE=+1234567890
+      - LIBRARY_ADDRESS=123 Library Street, City, State 12345
+      
+      # Fine and Borrowing Settings
+      - DAILY_FINE_AMOUNT=1.00
+      - MAX_FINE_AMOUNT=50.00
+      - BORROWING_PERIOD_DAYS=14
+      - RESERVATION_PERIOD_DAYS=7
+      
+      # Celery Configuration
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      
+      # Security Settings
+      - SECURE_SSL_REDIRECT=False
+      - SECURE_HSTS_SECONDS=0
+      - SESSION_COOKIE_SECURE=False
+      - CSRF_COOKIE_SECURE=False
+      
+      # Static and Media Files
+      - STATIC_URL=/static/
+      - MEDIA_URL=/media/
+      - STATIC_ROOT=/app/staticfiles
+      - MEDIA_ROOT=/app/media
+      
+      # Logging
+      - LOG_LEVEL=INFO
+      - LOG_FILE=/app/logs/library.log
+      
+      # Django Admin Superuser
+      - DJANGO_SUPERUSER_USERNAME=admin
+      - DJANGO_SUPERUSER_EMAIL=admin@ntalibrary.edu
+      - DJANGO_SUPERUSER_PASSWORD=admin123
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - library_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  web-prod:
+    build: .
+    container_name: library_web_prod
+    restart: unless-stopped
+    # No ports exposed - accessed only through nginx
+    volumes:
+      # Mount media files for persistence
+      - media_data:/app/media
+      # Mount static files
+      - static_data:/app/staticfiles
+      # Mount logs
+      - logs_data:/app/logs
+    environment:
+      # Django Configuration
+      - DEBUG=False
+      - SECRET_KEY=django-insecure-change-this-in-production-very-long-secret-key-123456789
+      - ALLOWED_HOSTS=localhost,127.0.0.1,your-domain.com
+      - DJANGO_SETTINGS_MODULE=nta_library.settings
+      - PYTHONPATH=/app
+      
+      # Database Configuration
+      - DATABASE_URL=mysql://db_user:password@db:3306/database
+      
+      # Redis Configuration
+      - REDIS_URL=redis://redis:6379/0
+      
+      # Email Configuration
+      - EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+      - EMAIL_HOST=smtp.gmail.com
+      - EMAIL_PORT=587
+      - EMAIL_USE_TLS=True
+      - EMAIL_HOST_USER=your-email@gmail.com
+      - EMAIL_HOST_PASSWORD=your-app-password
+      - DEFAULT_FROM_EMAIL=your-email@gmail.com
+      
+      # Library Configuration
+      - LIBRARY_NAME=NTA Library
+      - LIBRARY_EMAIL=library@yourdomain.com
+      - LIBRARY_PHONE=+1234567890
+      - LIBRARY_ADDRESS=123 Library Street, City, State 12345
+      
+      # Fine and Borrowing Settings
+      - DAILY_FINE_AMOUNT=1.00
+      - MAX_FINE_AMOUNT=50.00
+      - BORROWING_PERIOD_DAYS=14
+      - RESERVATION_PERIOD_DAYS=7
+      
+      # Celery Configuration
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      
+      # Security Settings
+      - SECURE_SSL_REDIRECT=False
+      - SECURE_HSTS_SECONDS=31536000
+      - SECURE_HSTS_INCLUDE_SUBDOMAINS=True
+      - SECURE_HSTS_PRELOAD=True
+      - SECURE_CONTENT_TYPE_NOSNIFF=True
+      - SECURE_BROWSER_XSS_FILTER=True
+      - SESSION_COOKIE_SECURE=False
+      - CSRF_COOKIE_SECURE=False
+      
+      # File Upload Settings
+      - FILE_UPLOAD_MAX_MEMORY_SIZE=10485760
+      - DATA_UPLOAD_MAX_MEMORY_SIZE=10485760
+      
+      # Static and Media Files
+      - STATIC_URL=/static/
+      - MEDIA_URL=/media/
+      - STATIC_ROOT=/app/staticfiles
+      - MEDIA_ROOT=/app/media
+      
+      # Logging
+      - LOG_LEVEL=INFO
+      - LOG_FILE=/app/logs/library.log
+      
+      # Django Admin Superuser
+      - DJANGO_SUPERUSER_USERNAME=admin
+      - DJANGO_SUPERUSER_EMAIL=admin@ntalibrary.edu
+      - DJANGO_SUPERUSER_PASSWORD=admin123
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - library_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 180s
+    entrypoint: ["/app/docker-entrypoint.sh", "web"]
+    profiles:
+      - production
+
+  # Optional: Nginx reverse proxy for production
+  nginx:
+    image: nginx:alpine
+    container_name: library_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - static_data:/app/staticfiles:ro
+      - media_data:/app/media:ro
+      # SSL certificates (if using HTTPS)
+      # - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - web-prod
+    networks:
+      - library_network
+    profiles:
+      - production
+
+  # Optional: Celery worker for background tasks
+  celery:
+    build: .
+    container_name: library_celery
+    restart: unless-stopped
+    command: celery -A nta_library worker -l info
+    volumes:
+      - media_data:/app/media
+      - logs_data:/app/logs
+    environment:
+      # Django Configuration
+      - DEBUG=False
+      - SECRET_KEY=django-insecure-change-this-in-production-very-long-secret-key-123456789
+      - ALLOWED_HOSTS=localhost,127.0.0.1,your-domain.com
+      - DJANGO_SETTINGS_MODULE=nta_library.settings
+      - PYTHONPATH=/app
+      
+      # Database Configuration
+      - DATABASE_URL=mysql://db_user:password@db:3306/database
+      
+      # Redis Configuration
+      - REDIS_URL=redis://redis:6379/0
+      
+      # Celery Configuration
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      
+      # Email Configuration
+      - EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+      - EMAIL_HOST=smtp.gmail.com
+      - EMAIL_PORT=587
+      - EMAIL_USE_TLS=True
+      - EMAIL_HOST_USER=your-email@gmail.com
+      - EMAIL_HOST_PASSWORD=your-app-password
+      - DEFAULT_FROM_EMAIL=your-email@gmail.com
+      
+      # Library Configuration
+      - LIBRARY_NAME=NTA Library
+      - LIBRARY_EMAIL=library@yourdomain.com
+      - LIBRARY_PHONE=+1234567890
+      - LIBRARY_ADDRESS=123 Library Street, City, State 12345
+      
+      # Logging
+      - LOG_LEVEL=INFO
+      - LOG_FILE=/app/logs/library.log
+      
+      # Django Admin Superuser
+      - DJANGO_SUPERUSER_USERNAME=admin
+      - DJANGO_SUPERUSER_EMAIL=admin@ntalibrary.edu
+      - DJANGO_SUPERUSER_PASSWORD=admin123
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - library_network
+    profiles:
+      - celery
+
+  # Optional: Celery beat for scheduled tasks
+  celery-beat:
+    build: .
+    container_name: library_celery_beat
+    restart: unless-stopped
+    command: celery -A nta_library beat -l info
+    volumes:
+      - logs_data:/app/logs
+    environment:
+      # Django Configuration
+      - DEBUG=False
+      - SECRET_KEY=django-insecure-change-this-in-production-very-long-secret-key-123456789
+      - ALLOWED_HOSTS=localhost,127.0.0.1,your-domain.com
+      - DJANGO_SETTINGS_MODULE=nta_library.settings
+      - PYTHONPATH=/app
+      
+      # Database Configuration
+      - DATABASE_URL=mysql://db_user:password@db:3306/database
+      
+      # Redis Configuration
+      - REDIS_URL=redis://redis:6379/0
+      
+      # Celery Configuration
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      
+      # Logging
+      - LOG_LEVEL=INFO
+      - LOG_FILE=/app/logs/library.log
+      
+      # Django Admin Superuser
+      - DJANGO_SUPERUSER_USERNAME=admin
+      - DJANGO_SUPERUSER_EMAIL=admin@ntalibrary.edu
+      - DJANGO_SUPERUSER_PASSWORD=admin123
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - library_network
+    profiles:
+      - celery
+
+volumes:
+  db_data:
+    driver: local
+  redis_data:
+    driver: local
+  media_data:
+    driver: local
+  static_data:
+    driver: local
+  logs_data:
+    driver: local
+
+networks:
+  library_network:
+    driver: bridge

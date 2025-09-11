@@ -1,0 +1,277 @@
+{% extends 'library_users/base.html' %}
+{% load static %}
+
+{% block title %}Security Dashboard - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.security-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.security-metric {
+    text-align: center;
+    padding: 15px;
+}
+
+.security-value {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.security-label {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+}
+
+.status-safe { color: #27ae60; }
+.status-warning { color: #f39c12; }
+.status-danger { color: #e74c3c; }
+
+.event-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.event-item {
+    padding: 12px;
+    border-bottom: 1px solid #ecf0f1;
+    border-left: 4px solid #3498db;
+}
+
+.event-warning {
+    border-left-color: #f39c12;
+    background-color: #fef9e7;
+}
+
+.event-danger {
+    border-left-color: #e74c3c;
+    background-color: #fdf2f2;
+}
+
+.threat-level {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.threat-low { background-color: #d5f4e6; color: #27ae60; }
+.threat-medium { background-color: #fef5e7; color: #f39c12; }
+.threat-high { background-color: #fdf2f2; color: #e74c3c; }
+
+.security-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+</style>
+{% endblock %}
+
+{% block body_block %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-shield-alt"></i> Security Dashboard</h1>
+                <button class="btn btn-primary" onclick="refreshDashboard()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Overview -->
+    <div class="row">
+        <div class="col-12">
+            <h3>Security Overview</h3>
+            <div class="security-grid">
+                <div class="security-card">
+                    <div class="security-metric">
+                        <div class="security-value status-{{ security_stats.failed_logins.status }}">
+                            {{ security_stats.failed_logins.count }}
+                        </div>
+                        <div class="security-label">Failed Logins (24h)</div>
+                    </div>
+                </div>
+                <div class="security-card">
+                    <div class="security-metric">
+                        <div class="security-value status-{{ security_stats.blocked_ips.status }}">
+                            {{ security_stats.blocked_ips.count }}
+                        </div>
+                        <div class="security-label">Blocked IPs</div>
+                    </div>
+                </div>
+                <div class="security-card">
+                    <div class="security-metric">
+                        <div class="security-value status-{{ security_stats.suspicious_activity.status }}">
+                            {{ security_stats.suspicious_activity.count }}
+                        </div>
+                        <div class="security-label">Suspicious Activities</div>
+                    </div>
+                </div>
+                <div class="security-card">
+                    <div class="security-metric">
+                        <div class="security-value status-safe">
+                            {{ security_stats.active_sessions.count }}
+                        </div>
+                        <div class="security-label">Active Sessions</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Security Events -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="security-card">
+                <h4>Recent Security Events</h4>
+                <div class="event-list">
+                    {% for event in recent_events %}
+                    <div class="event-item {% if event.severity == 'high' %}event-danger{% elif event.severity == 'medium' %}event-warning{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>{{ event.event_type }}</strong>
+                                <span class="threat-level threat-{{ event.severity }}">{{ event.severity }}</span>
+                                <br>
+                                <small class="text-muted">{{ event.timestamp|date:"M d, Y H:i:s" }}</small>
+                                <br>
+                                <span>{{ event.description }}</span>
+                                {% if event.ip_address %}
+                                <br><small>IP: {{ event.ip_address }}</small>
+                                {% endif %}
+                            </div>
+                            <div>
+                                {% if event.user %}
+                                <small class="text-muted">User: {{ event.user.username }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-shield-alt fa-3x text-success mb-3"></i>
+                        <p class="text-success">No security events detected. System is secure! 🛡️</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="security-card">
+                <h4>Security Status</h4>
+                <div class="mb-3">
+                    <strong>Overall Security Level:</strong>
+                    <span class="threat-level threat-{{ overall_threat_level }}">
+                        {{ overall_threat_level }}
+                    </span>
+                </div>
+                <div class="mb-3">
+                    <strong>Last Security Scan:</strong><br>
+                    <small class="text-muted">{{ last_scan_time|date:"M d, Y H:i:s" }}</small>
+                </div>
+                <div class="mb-3">
+                    <strong>Active Protections:</strong>
+                    <ul class="list-unstyled mt-2">
+                        <li><i class="fas fa-check text-success"></i> Rate Limiting</li>
+                        <li><i class="fas fa-check text-success"></i> CSRF Protection</li>
+                        <li><i class="fas fa-check text-success"></i> XSS Protection</li>
+                        <li><i class="fas fa-check text-success"></i> SQL Injection Protection</li>
+                        <li><i class="fas fa-check text-success"></i> Brute Force Protection</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="security-card">
+                <h4>Quick Actions</h4>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-warning" onclick="clearSecurityCache()">
+                        <i class="fas fa-trash"></i> Clear Security Cache
+                    </button>
+                    <button class="btn btn-info" onclick="exportSecurityLog()">
+                        <i class="fas fa-download"></i> Export Security Log
+                    </button>
+                    <a href="{% url 'books:performance_dashboard' %}" class="btn btn-secondary">
+                        <i class="fas fa-chart-line"></i> Performance Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Recommendations -->
+    {% if recommendations %}
+    <div class="row">
+        <div class="col-12">
+            <div class="security-card">
+                <h4>Security Recommendations</h4>
+                <div class="alert alert-info">
+                    <ul class="mb-0">
+                        {% for recommendation in recommendations %}
+                        <li>{{ recommendation }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function refreshDashboard() {
+    location.reload();
+}
+
+function clearSecurityCache() {
+    if (confirm('Are you sure you want to clear the security cache?')) {
+        fetch('{% url "books:clear_performance_cache" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert('Security cache cleared successfully!');
+            refreshDashboard();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error clearing cache.');
+        });
+    }
+}
+
+function exportSecurityLog() {
+    window.open('{% url "books:export_performance_data" %}?type=security', '_blank');
+}
+
+// Auto-refresh every 60 seconds
+setInterval(refreshDashboard, 60000);
+
+// Real-time security updates
+function updateSecurityMetrics() {
+    fetch('{% url "books:system_metrics_api" %}?type=security')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Updated security metrics:', data);
+            // Update UI with new data
+        })
+        .catch(error => console.error('Error updating security metrics:', error));
+}
+
+// Update security metrics every 10 seconds
+setInterval(updateSecurityMetrics, 10000);
+</script>
+{% endblock %}

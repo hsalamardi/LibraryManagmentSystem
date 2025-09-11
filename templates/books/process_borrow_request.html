@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+{% extends 'landing_page.html' %}
+{% load static %}
+
+{% block title %}{{ action|title }} Borrow Request - {{ borrow_request.book.title }}{% endblock %}
+
+{% block body_block %}
+<body>
+    <div class="container mt-4">
+        <!-- Header Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="hero-section">
+                    <div class="hero-content">
+                        <h1 class="hero-title">
+                            {% if action == 'approve' %}
+                                <i class="fas fa-check-circle me-3 text-success"></i>Approve Borrow Request
+                            {% else %}
+                                <i class="fas fa-times-circle me-3 text-danger"></i>Deny Borrow Request
+                            {% endif %}
+                        </h1>
+                        <p class="hero-subtitle">Review the request details and provide your decision.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="dashboard-card">
+                    <!-- Request Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <img src="{{ borrow_request.book.get_cover_image_url }}" 
+                                     class="img-fluid rounded shadow" 
+                                     alt="{{ borrow_request.book.title }} cover"
+                                     style="max-height: 300px; object-fit: cover;"
+                                     onerror="this.src='{% static 'images/default_book_cover.svg' %}'">
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <h3 class="mb-3">{{ borrow_request.book.title }}</h3>
+                            
+                            <!-- Book Details -->
+                            <div class="row mb-3">
+                                <div class="col-sm-6">
+                                    <div class="book-details">
+                                        <p><strong>Author:</strong> {{ borrow_request.book.author }}</p>
+                                        {% if borrow_request.book.isbn %}
+                                        <p><strong>ISBN:</strong> {{ borrow_request.book.isbn }}</p>
+                                        {% endif %}
+                                        <p><strong>Location:</strong> Shelf {{ borrow_request.book.shelf }}</p>
+                                        <p><strong>Condition:</strong> 
+                                            <span class="badge bg-{% if borrow_request.book.condition == 'excellent' %}success{% elif borrow_request.book.condition == 'good' %}primary{% elif borrow_request.book.condition == 'fair' %}warning{% else %}danger{% endif %}">
+                                                {{ borrow_request.book.get_condition_display }}
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="book-details">
+                                        {% if borrow_request.book.publisher %}
+                                        <p><strong>Publisher:</strong> {{ borrow_request.book.publisher }}</p>
+                                        {% endif %}
+                                        {% if borrow_request.book.publication_date %}
+                                        <p><strong>Publication:</strong> {{ borrow_request.book.publication_date|date:"Y" }}</p>
+                                        {% endif %}
+                                        <p><strong>Availability:</strong> 
+                                            <span class="badge bg-{% if borrow_request.book.is_available %}success{% else %}danger{% endif %}">
+                                                {% if borrow_request.book.is_available %}Available{% else %}Not Available{% endif %}
+                                            </span>
+                                        </p>
+                                        <p><strong>Serial:</strong> {{ borrow_request.book.serial }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Request Details -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-user me-2"></i>Requester Information</h5>
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <p><strong>Name:</strong> {{ borrow_request.requester.user.get_full_name|default:borrow_request.requester.user.username }}</p>
+                                    <p><strong>Email:</strong> {{ borrow_request.requester.user.email }}</p>
+                                    {% if borrow_request.requester.phone %}
+                                    <p><strong>Phone:</strong> {{ borrow_request.requester.phone }}</p>
+                                    {% endif %}
+                                    {% if borrow_request.requester.address %}
+                                    <p><strong>Address:</strong> {{ borrow_request.requester.address }}</p>
+                                    {% endif %}
+                                    <p><strong>Member Since:</strong> {{ borrow_request.requester.user.date_joined|date:"M Y" }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-info-circle me-2"></i>Request Details</h5>
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <p><strong>Request Date:</strong> {{ borrow_request.request_date|date:"M d, Y H:i" }}</p>
+                                    <p><strong>Requested Duration:</strong> 
+                                        <span class="badge bg-info">{{ borrow_request.requested_duration_days }} days</span>
+                                    </p>
+                                    <p><strong>Status:</strong> 
+                                        <span class="badge bg-warning">{{ borrow_request.get_status_display }}</span>
+                                    </p>
+                                    {% if borrow_request.notes %}
+                                    <p><strong>Requester Notes:</strong></p>
+                                    <div class="alert alert-info">
+                                        {{ borrow_request.notes }}
+                                    </div>
+                                    {% else %}
+                                    <p><strong>Requester Notes:</strong> <span class="text-muted">No additional notes</span></p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Decision Form -->
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <h5>
+                                    {% if action == 'approve' %}
+                                        <i class="fas fa-check-circle me-2 text-success"></i>Approve Request
+                                    {% else %}
+                                        <i class="fas fa-times-circle me-2 text-danger"></i>Deny Request
+                                    {% endif %}
+                                </h5>
+                                
+                                {% if action == 'approve' %}
+                                <div class="alert alert-success">
+                                    <h6 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Approval Actions</h6>
+                                    <ul class="mb-0">
+                                        <li>The book will be marked as borrowed</li>
+                                        <li>Due date will be set to {{ borrow_request.requested_duration_days }} days from today</li>
+                                        <li>The requester will receive an email notification</li>
+                                        <li>The book will become unavailable for other users</li>
+                                    </ul>
+                                </div>
+                                {% else %}
+                                <div class="alert alert-warning">
+                                    <h6 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Denial Information</h6>
+                                    <ul class="mb-0">
+                                        <li>The request will be marked as denied</li>
+                                        <li>The book will remain available for other users</li>
+                                        <li>The requester will receive an email notification</li>
+                                        <li>Please provide a reason for denial in the notes below</li>
+                                    </ul>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="admin_notes" class="form-label">
+                                <i class="fas fa-sticky-note me-2"></i>Admin Notes
+                                {% if action == 'deny' %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            <textarea class="form-control" id="admin_notes" name="admin_notes" rows="4" 
+                                      placeholder="{% if action == 'approve' %}Optional notes for the requester (e.g., pickup instructions, special conditions)...{% else %}Please provide a reason for denying this request...{% endif %}"
+                                      {% if action == 'deny' %}required{% endif %}></textarea>
+                            <div class="form-text">
+                                {% if action == 'approve' %}
+                                    These notes will be included in the approval email to the requester.
+                                {% else %}
+                                    Please provide a clear reason for denial. This will help the requester understand the decision.
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-3 justify-content-end">
+                            <a href="{% url 'books:manage_borrow_requests' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Requests
+                            </a>
+                            <button type="submit" class="btn {% if action == 'approve' %}btn-success{% else %}btn-danger{% endif %}">
+                                {% if action == 'approve' %}
+                                    <i class="fas fa-check me-2"></i>Approve Request
+                                {% else %}
+                                    <i class="fas fa-times me-2"></i>Deny Request
+                                {% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Form validation
+        (function() {
+            'use strict';
+            window.addEventListener('load', function() {
+                var forms = document.getElementsByClassName('needs-validation');
+                var validation = Array.prototype.filter.call(forms, function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+    </script>
+</body>
+{% endblock %}

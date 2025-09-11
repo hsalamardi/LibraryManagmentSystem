@@ -1,0 +1,61 @@
+{% extends 'emails/base_email.html' %}
+
+{% block title %}Book Due Soon - {{ library_name }}{% endblock %}
+
+{% block header %}
+<span class="emoji">📚</span> Book Due Soon
+{% endblock %}
+
+{% block content %}
+<p>Dear {{ user.get_full_name|default:user.username }},</p>
+
+<p>This is a friendly reminder that you have a book due soon in our library system.</p>
+
+<div class="book-info">
+    <div class="book-title">{{ book.title }}</div>
+    <div class="book-author">by {{ book.author }}</div>
+    {% if book.isbn %}
+    <small><strong>ISBN:</strong> {{ book.isbn }}</small>
+    {% endif %}
+</div>
+
+<div class="date-info">
+    <strong>📅 Due Date:</strong> {{ borrowing.due_date|date:"F d, Y" }}<br>
+    <strong>⏰ Days Remaining:</strong> 
+    {% if days_until_due == 1 %}
+        <span style="color: #dc3545; font-weight: bold;">{{ days_until_due }} day</span>
+    {% elif days_until_due <= 3 %}
+        <span style="color: #ffc107; font-weight: bold;">{{ days_until_due }} days</span>
+    {% else %}
+        <span style="color: #28a745; font-weight: bold;">{{ days_until_due }} days</span>
+    {% endif %}
+</div>
+
+{% if days_until_due <= 1 %}
+<div class="alert alert-danger">
+    <strong>⚠️ Urgent:</strong> This book is due very soon! Please return it as soon as possible to avoid late fees.
+</div>
+{% elif days_until_due <= 3 %}
+<div class="alert alert-warning">
+    <strong>📅 Reminder:</strong> Please plan to return this book within the next few days.
+</div>
+{% endif %}
+
+<p><strong>How to return your book:</strong></p>
+<ul>
+    <li>📍 Visit the library during operating hours</li>
+    <li>📚 Use the book drop-off box (available 24/7)</li>
+    <li>📞 Contact us if you need to renew the book</li>
+</ul>
+
+<div style="text-align: center; margin: 30px 0;">
+    <a href="#" class="btn">📖 View My Books Online</a>
+</div>
+
+<p><strong>Need to renew?</strong> Contact us at <a href="mailto:{{ library_email }}">{{ library_email }}</a> or visit the library.</p>
+
+<p>Thank you for using our library services!</p>
+
+<p>Best regards,<br>
+<strong>{{ library_name }} Team</strong></p>
+{% endblock %}

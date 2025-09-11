@@ -1,0 +1,250 @@
+{% extends 'library_users/base.html' %}
+{% load static %}
+
+{% block title %}Performance Dashboard - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.metric-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.metric-label {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+}
+
+.status-good { color: #27ae60; }
+.status-warning { color: #f39c12; }
+.status-error { color: #e74c3c; }
+
+.chart-container {
+    height: 300px;
+    margin: 20px 0;
+}
+
+.request-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.request-item {
+    padding: 10px;
+    border-bottom: 1px solid #ecf0f1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.request-slow {
+    background-color: #fdf2e9;
+    border-left: 4px solid #e67e22;
+}
+
+.system-health {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.refresh-btn {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    z-index: 1000;
+}
+</style>
+{% endblock %}
+
+{% block body_block %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-chart-line"></i> Performance Dashboard</h1>
+                <button class="btn btn-primary refresh-btn" onclick="refreshDashboard()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Health Overview -->
+    <div class="row">
+        <div class="col-12">
+            <h3>System Health</h3>
+            <div class="system-health">
+                <div class="metric-card">
+                    <div class="metric-value status-{{ system_health.cpu.status }}">
+                        {{ system_health.cpu.usage|floatformat:1 }}%
+                    </div>
+                    <div class="metric-label">CPU Usage</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value status-{{ system_health.memory.status }}">
+                        {{ system_health.memory.usage|floatformat:1 }}%
+                    </div>
+                    <div class="metric-label">Memory Usage</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value status-{{ system_health.disk.status }}">
+                        {{ system_health.disk.usage|floatformat:1 }}%
+                    </div>
+                    <div class="metric-label">Disk Usage</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value status-good">
+                        {{ total_requests }}
+                    </div>
+                    <div class="metric-label">Total Requests</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="metric-card">
+                <h4>Response Time Statistics</h4>
+                {% if aggregated %}
+                <div class="row">
+                    <div class="col-6">
+                        <div class="metric-value">{{ aggregated.avg_response_time|floatformat:0 }}ms</div>
+                        <div class="metric-label">Average Response Time</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="metric-value">{{ aggregated.max_response_time|floatformat:0 }}ms</div>
+                        <div class="metric-label">Max Response Time</div>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-muted">No performance data available yet.</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="metric-card">
+                <h4>Database Performance</h4>
+                {% if db_stats %}
+                <div class="row">
+                    <div class="col-6">
+                        <div class="metric-value">{{ db_stats.query_count }}</div>
+                        <div class="metric-label">Total Queries</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="metric-value">{{ db_stats.avg_query_time|floatformat:2 }}ms</div>
+                        <div class="metric-label">Avg Query Time</div>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-muted">No database statistics available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Requests -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="metric-card">
+                <h4>Recent Requests</h4>
+                <div class="request-list">
+                    {% for metric in metrics %}
+                    <div class="request-item {% if metric.is_slow %}request-slow{% endif %}">
+                        <div>
+                            <strong>{{ metric.method }} {{ metric.path }}</strong><br>
+                            <small class="text-muted">{{ metric.timestamp|date:"H:i:s" }}</small>
+                        </div>
+                        <div>
+                            <span class="badge {% if metric.is_slow %}badge-warning{% else %}badge-success{% endif %}">
+                                {{ metric.response_time|floatformat:0 }}ms
+                            </span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">No recent requests to display.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="metric-card">
+                <h4>Slow Requests (>1000ms)</h4>
+                <div class="request-list">
+                    {% for request in slow_requests %}
+                    <div class="request-item request-slow">
+                        <div>
+                            <strong>{{ request.method }} {{ request.path }}</strong><br>
+                            <small class="text-muted">{{ request.timestamp|date:"H:i:s" }}</small>
+                        </div>
+                        <div>
+                            <span class="badge badge-warning">
+                                {{ request.response_time|floatformat:0 }}ms
+                            </span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-success">No slow requests detected! 🎉</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="metric-card">
+                <h4>Actions</h4>
+                <div class="btn-group" role="group">
+                    <a href="{% url 'books:clear_performance_cache' %}" class="btn btn-warning">
+                        <i class="fas fa-trash"></i> Clear Cache
+                    </a>
+                    <a href="{% url 'books:export_performance_data' %}" class="btn btn-info">
+                        <i class="fas fa-download"></i> Export Data
+                    </a>
+                    <a href="{% url 'books:security_dashboard' %}" class="btn btn-secondary">
+                        <i class="fas fa-shield-alt"></i> Security Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function refreshDashboard() {
+    location.reload();
+}
+
+// Auto-refresh every 30 seconds
+setInterval(refreshDashboard, 30000);
+
+// Real-time updates via API
+function updateMetrics() {
+    fetch('{% url "books:performance_api" %}?type=metrics')
+        .then(response => response.json())
+        .then(data => {
+            // Update metrics display
+            console.log('Updated metrics:', data);
+        })
+        .catch(error => console.error('Error updating metrics:', error));
+}
+
+// Update metrics every 5 seconds
+setInterval(updateMetrics, 5000);
+</script>
+{% endblock %}

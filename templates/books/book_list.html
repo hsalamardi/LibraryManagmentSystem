@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+{% extends 'landing_page.html' %}
+{% load static %}
+
+{% block body_block %}
+<body>
+<div class="container-fluid py-4" style="background: var(--secondary-50); min-height: 100vh;">
+    <!-- Modern Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-2xl">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="feature-icon bg-primary text-white rounded-xl me-3" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-book text-lg"></i>
+                                </div>
+                                <div>
+                                    <h1 class="text-3xl font-bold text-primary mb-1">Library Catalog</h1>
+                                    <p class="text-muted mb-0">Discover and explore our extensive collection</p>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-4 flex-wrap">
+                                <div class="badge badge-primary">
+                                    <i class="fas fa-books me-1"></i>{{ books|length }} Total Books
+                                </div>
+                                <div class="badge badge-success">
+                                    <i class="fas fa-check-circle me-1"></i>{{ available_count|default:"0" }} Available
+                                </div>
+                                <div class="badge badge-warning">
+                                    <i class="fas fa-clock me-1"></i>{{ borrowed_count|default:"0" }} Borrowed
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a href="{% url 'books:search_results' %}" class="btn btn-secondary">
+                                <i class="fas fa-search me-1"></i>Advanced Search
+                            </a>
+                            <a href="{% url 'books:barcode_scan' %}" class="btn btn-primary">
+                                <i class="fas fa-barcode me-1"></i>Quick Scan
+                            </a>
+                            {% if user.is_staff or user.groups.all|length > 0 %}
+                                {% for group in user.groups.all %}
+                                    {% if group.name == 'Librarian' or group.name == 'Library Admin' %}
+                                        <a href="{% url 'books:add_a_book' %}" class="btn btn-success">
+                                            <i class="fas fa-plus me-1"></i>Add Book
+                                        </a>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modern Books Grid -->
+    {% if page_obj %}
+        <div class="row g-4">
+            {% for book in page_obj %}
+                <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                    <div class="card h-100 border-0 shadow-sm book-card transition hover:shadow-lg rounded-2xl">
+                        <!-- Book Cover Section -->
+                        <div class="position-relative overflow-hidden" style="height: 280px;">
+                            <img src="{{ book.get_cover_image_url }}" 
+                                 class="w-100 h-100 object-fit-cover" 
+                                 alt="{{ book.title }}"
+                                 style="object-fit: cover; transition: transform 0.3s ease;"
+                                 onerror="this.src='{% static 'images/default_book_cover.svg' %}'">
+                            
+                            <!-- Availability Badge -->
+                            <div class="position-absolute top-0 end-0 m-3">
+                                {% if book.is_available %}
+                                    <span class="badge badge-success shadow-sm">
+                                        <i class="fas fa-check-circle me-1"></i>Available
+                                    </span>
+                                {% else %}
+                                    <span class="badge badge-warning shadow-sm">
+                                        <i class="fas fa-clock me-1"></i>Borrowed
+                                    </span>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Language Badge -->
+                            {% if book.language and book.language != 'en' %}
+                            <div class="position-absolute top-0 start-0 m-3">
+                                <span class="badge badge-secondary shadow-sm">
+                                    {{ book.language|upper }}
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Book Information -->
+                        <div class="card-body p-4 d-flex flex-column">
+                            <!-- Title and Author -->
+                            <div class="mb-3">
+                                <h5 class="card-title font-semibold mb-2 leading-tight" 
+                                    style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"
+                                    title="{{ book.title }}">
+                                    <a href="{% url 'books:book_detail' book.id %}" class="text-decoration-none">
+                                        {{ book.title|truncatechars:50 }}
+                                    </a>
+                                </h5>
+                                <p class="text-muted mb-1">
+                                    <i class="fas fa-user me-2 text-primary"></i>
+                                    <span class="font-medium">{{ book.author|default:"Unknown Author"|truncatechars:30 }}</span>
+                                </p>
+                            </div>
+                            
+                            <!-- Book Details -->
+                            <div class="mb-3 flex-grow-1">
+                                {% if book.isbn %}
+                                <div class="mb-2">
+                                    <i class="fas fa-barcode me-2 text-secondary"></i>
+                                    <span class="text-xs font-mono text-muted">{{ book.isbn }}</span>
+                                </div>
+                                {% endif %}
+                                
+                                {% if book.publisher %}
+                                <div class="mb-2">
+                                    <i class="fas fa-building me-2 text-secondary"></i>
+                                    <span class="text-sm text-muted">{{ book.publisher|truncatechars:25 }}</span>
+                                </div>
+                                {% endif %}
+                                
+                                {% if book.shelf %}
+                                <div class="mb-2">
+                                    <i class="fas fa-map-marker-alt me-2 text-secondary"></i>
+                                    <span class="text-sm text-muted">Shelf {{ book.shelf }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="mt-auto">
+                                <div class="d-grid gap-2">
+                                    <a href="{% url 'books:book_detail' book.id %}" class="btn btn-primary">
+                                        <i class="fas fa-eye me-2"></i>View Details
+                                    </a>
+                                    
+                                    {% if user.is_authenticated %}
+                                        {% if book.is_available %}
+                                            <a href="{% url 'books:borrow_book' book.id %}" class="btn btn-success">
+                                                <i class="fas fa-book-reader me-2"></i>Borrow Now
+                                            </a>
+                                        {% else %}
+                                            <a href="{% url 'books:reserve_book' book.id %}" class="btn btn-warning">
+                                                <i class="fas fa-bookmark me-2"></i>Reserve Book
+                                            </a>
+                                        {% endif %}
+                                    {% else %}
+                                        <a href="/library_users/login" class="btn btn-secondary">
+                                            <i class="fas fa-sign-in-alt me-2"></i>Login to Borrow
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- Empty State -->
+        <div class="card border-0 shadow-sm rounded-2xl">
+            <div class="card-body text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-book-open fa-4x text-muted"></i>
+                </div>
+                <h3 class="text-2xl font-semibold text-muted mb-3">No Books Found</h3>
+                <p class="text-muted mb-4">The library catalog appears to be empty. Check back later or contact the librarian.</p>
+                
+                <div class="d-flex gap-3 justify-content-center flex-wrap">
+                    <a href="{% url 'books:search_results' %}" class="btn btn-primary">
+                        <i class="fas fa-search me-2"></i>Try Advanced Search
+                    </a>
+                    {% if user.is_staff or user.groups.all|length > 0 %}
+                        {% for group in user.groups.all %}
+                            {% if group.name == 'Librarian' or group.name == 'Library Admin' %}
+                                <a href="{% url 'books:add_a_book' %}" class="btn btn-success">
+                                    <i class="fas fa-plus me-2"></i>Add First Book
+                                </a>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    <!-- Modern Pagination -->
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-2xl">
+                <div class="card-body p-4">
+                    <nav aria-label="Book catalog pagination">
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link rounded-lg me-2" href="?page=1">
+                                        <i class="fas fa-angle-double-left me-1"></i>First
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link rounded-lg me-2" href="?page={{ page_obj.previous_page_number }}">
+                                        <i class="fas fa-angle-left me-1"></i>Previous
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            <!-- Page Numbers -->
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link bg-primary border-primary rounded-lg mx-1">
+                                            {{ num }}
+                                        </span>
+                                    </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link rounded-lg mx-1" href="?page={{ num }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link rounded-lg ms-2" href="?page={{ page_obj.next_page_number }}">
+                                        Next<i class="fas fa-angle-right ms-1"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link rounded-lg ms-2" href="?page={{ page_obj.paginator.num_pages }}">
+                                        Last<i class="fas fa-angle-double-right ms-1"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    
+                    <!-- Pagination Info -->
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            Showing page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} 
+                            ({{ page_obj.paginator.count }} total books)
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Enhanced CSS for Book Cards -->
+<style>
+.book-card {
+    transition: all 0.3s ease;
+    border: 1px solid var(--secondary-200);
+}
+
+.book-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl) !important;
+}
+
+.book-card:hover .card-img-top {
+    transform: scale(1.05);
+}
+
+.book-card:hover .bg-gradient {
+    opacity: 1 !important;
+}
+
+.page-link {
+    border: 1px solid var(--secondary-300);
+    color: var(--secondary-700);
+    padding: 0.5rem 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.page-link:hover {
+    background-color: var(--primary-50);
+    border-color: var(--primary-300);
+    color: var(--primary-700);
+    transform: translateY(-1px);
+}
+
+.page-item.active .page-link {
+    background-color: var(--primary-600);
+    border-color: var(--primary-600);
+    color: white;
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+}
+
+.feature-icon {
+    background: var(--primary-600);
+}
+
+@media (max-width: 768px) {
+    .book-card {
+        margin-bottom: 1.5rem;
+    }
+    
+    .pagination {
+        font-size: 0.875rem;
+    }
+    
+    .page-link {
+        padding: 0.375rem 0.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .col-xl-3, .col-lg-4, .col-md-6 {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+}
+</style>
+
+</body>
+{% endblock %}

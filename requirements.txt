@@ -1,0 +1,59 @@
+# Core Django
+django>=4.2,<5.0
+django-environ>=0.10.0
+
+# Database
+mysqlclient>=2.1.0
+psycopg2-binary>=2.9.5
+dj-database-url>=1.2.0
+
+# Forms and UI
+django-crispy-forms
+crispy-bootstrap5>=0.7
+django-widget-tweaks
+django-colorfield
+
+# Admin interface
+django-simpleui
+django-import-export
+
+# API and REST
+djangorestframework
+django-cors-headers
+
+# Authentication and Security
+django-allauth
+django-ratelimit
+django-axes
+
+# File handling
+pillow
+django-storages
+
+# Email
+django-ses
+celery
+redis
+
+# Utilities
+faker
+django-extensions
+django-debug-toolbar
+requests
+python-dateutil
+psutil
+
+# Reporting and Analytics
+reportlab
+openpyxl
+matplotlib
+
+# Search
+django-haystack
+whoosh
+
+# Production
+gunicorn
+dj-database-url
+whitenoise
+django-filter

@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sign In - NTA Library{% endblock %}</title>
+    
+    <!-- Bootstrap 5.3 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Dynamic Theme CSS -->
+    <link rel="stylesheet" href="{% url 'books:theme_css' %}">
+    
+    <style>
+        :root {
+            /* Default theme variables (will be overridden by dynamic theme) */
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #3b82f6;
+            --secondary-color: #64748b;
+            --accent-color: #f59e0b;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --background-primary: #ffffff;
+            --background-secondary: #f8fafc;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border-color: #e2e8f0;
+            --card-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            --button-radius: 0.75rem;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Animated background elements */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 70%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
+                        radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+            pointer-events: none;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+        
+        .login-container {
+            width: 100%;
+            max-width: 1100px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .login-card {
+            background: var(--background-primary);
+            border-radius: 1.5rem;
+            box-shadow: var(--card-shadow), 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .login-left {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            color: white;
+            min-height: 600px;
+        }
+        
+        .login-left::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="25" cy="25" r="0.5" fill="rgba(255,255,255,0.05)"/><circle cx="75" cy="75" r="0.8" fill="rgba(255,255,255,0.08)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>') repeat;
+            opacity: 0.3;
+        }
+        
+        .login-right {
+            padding: 3rem;
+            background: var(--background-primary);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 600px;
+        }
+        
+        .brand-section {
+            position: relative;
+            z-index: 2;
+            margin-bottom: 2rem;
+        }
+        
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+        }
+        
+        .brand-logo i {
+            font-size: 2rem;
+            margin-right: 0.75rem;
+            color: var(--accent-color);
+        }
+        
+        .welcome-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .welcome-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.8) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .welcome-subtitle {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .features-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .features-list li {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            color: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s ease;
+        }
+        
+        .features-list li:hover {
+            color: white;
+            transform: translateX(5px);
+        }
+        
+        .features-list li i {
+            width: 20px;
+            margin-right: 1rem;
+            color: var(--accent-color);
+            font-size: 1.1rem;
+        }
+        
+        .login-form-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+        
+        .login-form-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .login-form-header p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+        
+        .form-floating {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        
+        .form-floating .form-control {
+            height: 3.5rem;
+            border: 2px solid var(--border-color);
+            border-radius: var(--button-radius);
+            padding: 1rem 1.25rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: var(--background-primary);
+            color: var(--text-primary);
+        }
+        
+        .form-floating .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            outline: none;
+        }
+        
+        .form-floating label {
+            color: var(--text-secondary);
+            font-weight: 500;
+            padding: 1rem 1.25rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-floating .form-control:focus + label,
+        .form-floating .form-control:not(:placeholder-shown) + label {
+            color: var(--primary-color);
+            transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
+        }
+        
+        .input-icon {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            z-index: 5;
+            pointer-events: none;
+        }
+        
+        .btn-login {
+            width: 100%;
+            height: 3.5rem;
+            background: var(--primary-color);
+            border: none;
+            border-radius: var(--button-radius);
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2);
+            margin-bottom: 1.5rem;
+        }
+        
+        .btn-login:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.3);
+            color: white;
+        }
+        
+        .btn-login:active {
+            transform: translateY(0);
+        }
+        
+        .btn-login.loading {
+            opacity: 0.8;
+            cursor: wait;
+        }
+        
+        .loading-spinner {
+            display: none;
+        }
+        
+        .btn-login.loading .loading-spinner {
+            display: inline-block;
+        }
+        
+        .btn-login.loading .btn-text {
+            opacity: 0.7;
+        }
+        
+        .alert-custom {
+            border: none;
+            border-radius: var(--button-radius);
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .alert-danger {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--danger-color);
+            border-left: 4px solid var(--danger-color);
+        }
+        
+        .alert-success {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .alert-warning {
+            background-color: rgba(245, 158, 11, 0.1);
+            color: var(--warning-color);
+            border-left: 4px solid var(--warning-color);
+        }
+        
+        .divider {
+            text-align: center;
+            margin: 2rem 0;
+            position: relative;
+        }
+        
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--border-color);
+        }
+        
+        .divider span {
+            background: var(--background-primary);
+            padding: 0 1rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        .register-link {
+            text-align: center;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .register-link p {
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+        
+        .register-link a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+        }
+        
+        .register-link a:hover {
+            color: var(--primary-dark);
+            background: rgba(37, 99, 235, 0.05);
+            transform: translateY(-1px);
+        }
+        
+        .back-to-home {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            z-index: 10;
+        }
+        
+        .back-to-home a {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .back-to-home a:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .login-left {
+                display: none;
+            }
+            
+            .login-right {
+                min-height: auto;
+                padding: 2rem;
+            }
+            
+            .login-card {
+                margin: 1rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 0.5rem;
+            }
+            
+            .login-right {
+                padding: 1.5rem;
+            }
+            
+            .login-form-header h1 {
+                font-size: 1.75rem;
+            }
+            
+            .back-to-home {
+                top: 1rem;
+                left: 1rem;
+            }
+        }
+        
+        /* Animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .login-card {
+            animation: fadeInUp 0.8s ease-out;
+        }
+        
+        .welcome-content > * {
+            animation: fadeInUp 0.8s ease-out;
+        }
+        
+        .welcome-content > *:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+        
+        .welcome-content > *:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+        
+        .features-list li {
+            animation: fadeInUp 0.8s ease-out;
+        }
+        
+        .features-list li:nth-child(1) { animation-delay: 0.3s; }
+        .features-list li:nth-child(2) { animation-delay: 0.4s; }
+        .features-list li:nth-child(3) { animation-delay: 0.5s; }
+        .features-list li:nth-child(4) { animation-delay: 0.6s; }
+        .features-list li:nth-child(5) { animation-delay: 0.7s; }
+    </style>
+</head>
+<body>
+    <!-- Back to Home Button -->
+    <div class="back-to-home">
+        <a href="/">
+            <i class="fas fa-arrow-left"></i>
+            Back to Home
+        </a>
+    </div>
+    
+    <div class="login-container">
+        <div class="login-card">
+            <div class="row g-0">
+                <!-- Left Side - Welcome Section -->
+                <div class="col-lg-6 login-left">
+                    <div class="brand-section">
+                        <div class="brand-logo">
+                            <i class="fas fa-book-open"></i>
+                            NTA Library
+                        </div>
+                    </div>
+                    
+                    <div class="welcome-content">
+                        <h1 class="welcome-title">Welcome Back to Your Digital Library</h1>
+                        <p class="welcome-subtitle">
+                            Access your personal library dashboard, manage your book collections, 
+                            and continue your learning journey with our comprehensive digital platform.
+                        </p>
+                        
+                        <ul class="features-list">
+                            <li>
+                                <i class="fas fa-book-reader"></i>
+                                Access your borrowed books
+                            </li>
+                            <li>
+                                <i class="fas fa-search"></i>
+                                Advanced search & discovery
+                            </li>
+                            <li>
+                                <i class="fas fa-bookmark"></i>
+                                Personal reading lists
+                            </li>
+                            <li>
+                                <i class="fas fa-chart-line"></i>
+                                Reading progress tracking
+                            </li>
+                            <li>
+                                <i class="fas fa-bell"></i>
+                                Smart notifications
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Right Side - Login Form -->
+                <div class="col-lg-6 login-right">
+                    <div class="login-form-header">
+                        <h1>Sign In</h1>
+                        <p>Enter your credentials to access your account</p>
+                    </div>
+                    
+                    <!-- Display Messages -->
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-custom alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {% if message.tags == 'error' or message.tags == 'danger' %}
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                {% elif message.tags == 'success' %}
+                                    <i class="fas fa-check-circle"></i>
+                                {% elif message.tags == 'warning' %}
+                                    <i class="fas fa-exclamation-circle"></i>
+                                {% else %}
+                                    <i class="fas fa-info-circle"></i>
+                                {% endif %}
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <form action="{% url 'library_users:login' %}" method="post" id="loginForm" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="form-floating">
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="username" 
+                                name="username" 
+                                placeholder="Username" 
+                                value="{{ username|default:'' }}" 
+                                required 
+                                autocomplete="username"
+                            >
+                            <label for="username">
+                                <i class="fas fa-user me-2"></i>Username or Email
+                            </label>
+                            <div class="input-icon">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="form-floating">
+                            <input 
+                                type="password" 
+                                class="form-control" 
+                                id="password" 
+                                name="password" 
+                                placeholder="Password" 
+                                required 
+                                autocomplete="current-password"
+                            >
+                            <label for="password">
+                                <i class="fas fa-lock me-2"></i>Password
+                            </label>
+                            <div class="input-icon">
+                                <i class="fas fa-lock"></i>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-login" id="loginBtn">
+                            <span class="loading-spinner">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </span>
+                            <span class="btn-text">
+                                <i class="fas fa-sign-in-alt"></i>
+                                Sign In to Library
+                            </span>
+                        </button>
+                    </form>
+                    
+                    <div class="register-link">
+                        <p>Don't have an account yet?</p>
+                        <a href="{% url 'library_users:register' %}">
+                            <i class="fas fa-user-plus"></i>
+                            Create New Account
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Enhanced form handling
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            const btn = document.getElementById('loginBtn');
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            
+            if (!username || !password) {
+                return; // Let browser validation handle this
+            }
+            
+            // Show loading state
+            btn.classList.add('loading');
+            btn.disabled = true;
+            
+            // Add subtle animation
+            btn.style.transform = 'scale(0.98)';
+            setTimeout(() => {
+                btn.style.transform = 'scale(1)';
+            }, 150);
+        });
+        
+        // Auto-dismiss alerts after 5 seconds
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert.show');
+            alerts.forEach(function(alert) {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            });
+        }, 5000);
+        
+        // Focus management
+        window.addEventListener('load', function() {
+            const usernameField = document.getElementById('username');
+            if (usernameField && !usernameField.value) {
+                usernameField.focus();
+            }
+        });
+        
+        // Enhanced form validation feedback
+        const inputs = document.querySelectorAll('.form-control');
+        inputs.forEach(input => {
+            input.addEventListener('blur', function() {
+                if (this.value.trim() === '') {
+                    this.style.borderColor = 'var(--danger-color)';
+                    this.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                } else {
+                    this.style.borderColor = 'var(--success-color)';
+                    this.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+                }
+            });
+            
+            input.addEventListener('focus', function() {
+                this.style.borderColor = 'var(--primary-color)';
+                this.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.1)';
+            });
+            
+            input.addEventListener('input', function() {
+                if (this.style.borderColor === 'var(--danger-color)' && this.value.trim() !== '') {
+                    this.style.borderColor = 'var(--border-color)';
+                    this.style.boxShadow = 'none';
+                }
+            });
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Alt + H to go home
+            if (e.altKey && e.key === 'h') {
+                e.preventDefault();
+                window.location.href = '/';
+            }
+        });
+        
+        // Theme integration
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load theme variables if available
+            fetch('{% url "books:theme_variables" %}')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.variables) {
+                        const root = document.documentElement;
+                        Object.entries(data.variables).forEach(([key, value]) => {
+                            root.style.setProperty(key, value);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.log('Theme variables not available:', error);
+                });
+        });
+    </script>
+</body>
+</html>
