@@ -75,7 +75,7 @@ INSTALLED_APPS = [
     
     # Third-party apps
     'crispy_forms',
-    # 'crispy_bootstrap5',  # Commented out due to import issues
+    'crispy_bootstrap5',
     'widget_tweaks',
     'import_export',
     'rest_framework',
@@ -103,8 +103,8 @@ if DEBUG:
 SITE_ID = 1
 
 # Crispy Forms
-# CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"  # Commented out due to crispy_bootstrap5 import issue
-# CRISPY_TEMPLATE_PACK = "bootstrap5"  # Commented out due to crispy_bootstrap5 import issue
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 # Django REST Framework
 REST_FRAMEWORK = {

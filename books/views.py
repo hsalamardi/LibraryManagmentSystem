@@ -1094,7 +1094,7 @@ def reserve_book(request, book_id):
 
 @login_required
 def my_books(request):
-    user_profile = get_object_or_404(UserProfileinfo, user=request.user)
+    user_profile, created = UserProfileinfo.objects.get_or_create(user=request.user)
     
     current_borrowings = Borrower.objects.filter(
         borrower=user_profile, 
@@ -1116,22 +1116,12 @@ def my_books(request):
     overdue_count = current_borrowings.filter(due_date__lt=timezone.now()).count()
     
     context = {
+        'user_profile': user_profile,
         'current_borrowings': current_borrowings,
         'reservations': reservations,
         'pending_requests': pending_requests,
         'borrowing_history': borrowing_history,
         'overdue_count': overdue_count,
-    }
-    print(f"User Profile: {user_profile}")
-    print(f"Borrowed Books: {borrowed_books}")
-    print(f"Reservations: {reservations}")
-    print(f"Pending Borrow Requests: {pending_borrow_requests}")
-
-    context = {
-        'user_profile': user_profile,
-        'borrowed_books': borrowed_books,
-        'reservations': reservations,
-        'pending_borrow_requests': pending_borrow_requests,
     }
     return render(request, 'books/my_books.html', context)
 
