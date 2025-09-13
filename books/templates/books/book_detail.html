@@ -1,0 +1,55 @@
+{% extends 'landing_page.html' %}
+
+{% block body_block %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h1 class="card-title">{{ book.title }}</h1>
+                </div>
+                <div class="card-body">
+                    <p><strong>Serial:</strong> {{ book.serial }}</p>
+                    <p><strong>Shelf:</strong> {{ book.shelf }}</p>
+                    <p><strong>Author:</strong> {{ book.author }}</p>
+                    <p><strong>ISBN:</strong> {{ book.isbn }}</p>
+                    <p><strong>Publisher:</strong> {{ book.publisher }}</p>
+                    <p><strong>Edition:</strong> {{ book.edition }}</p>
+                    <p><strong>Pages:</strong> {{ book.pages }}</p>
+                    <p><strong>Language:</strong> {{ book.language }}</p>
+                    <p><strong>Dewey Code:</strong> {{ book.dewey_code }}</p>
+                    <p><strong>Main Class:</strong> {{ book.main_class }}</p>
+                    <p><strong>Divisions:</strong> {{ book.divisions }}</p>
+                    <p><strong>Sections:</strong> {{ book.sections }}</p>
+                    <p><strong>Cutter Author:</strong> {{ book.cutter_author }}</p>
+                    <p><strong>Volume:</strong> {{ book.volume }}</p>
+                    <p><strong>Series:</strong> {{ book.series }}</p>
+                    <p><strong>Editor:</strong> {{ book.editor }}</p>
+                    <p><strong>Translator:</strong> {{ book.translator }}</p>
+                    <p><strong>Publication Date:</strong> {{ book.publication_date }}</p>
+                    <p><strong>Website:</strong> <a href="{{ book.website }}" target="_blank">{{ book.website }}</a></p>
+                    <p><strong>Place of Publication:</strong> {{ book.place_of_publication }}</p>
+                    <p><strong>Source:</strong> {{ book.source }}</p>
+                    <p><strong>Cover Type:</strong> {{ book.cover_type }}</p>
+                    <p><strong>Condition:</strong> {{ book.condition }}</p>
+                    <p><strong>Copy Number:</strong> {{ book.copy_number }}</p>
+                    <p><strong>Status:</strong> {{ book.status }}</p>
+                    <p><strong>Category:</strong> {{ book.category }}</p>
+                    
+                    <h5>Book Summary:</h5>
+                    <p>{{ book.book_summary }}</p>
+
+                    <h5>Contents:</h5>
+                    <p>{{ book.contents }}</p>
+
+                    <h5>Keywords:</h5>
+                    <p>{{ book.keywords }}</p>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'books:view_books_list' %}" class="btn btn-secondary">Back to Books</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

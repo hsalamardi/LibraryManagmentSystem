@@ -157,6 +157,9 @@ class DashboardView(TemplateView):
         ).count()
         
         # Calculate percentages
+        total_books = cached_stats.get('total_books', 0)
+        available_books = cached_stats.get('available_books', 0)
+        borrowed_books = cached_stats.get('borrowed_books', 0)
         availability_percentage = round((available_books / total_books * 100), 1) if total_books > 0 else 0
         overdue_percentage = round((overdue_books / borrowed_books * 100), 1) if borrowed_books > 0 else 0
         

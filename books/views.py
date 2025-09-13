@@ -12,7 +12,7 @@ from django.core.cache import cache
 from django_ratelimit.decorators import ratelimit
 from .security_decorators import audit_action, log_admin_access, monitor_sensitive_operations
 from datetime import date, timedelta
-from .models import Book, Borrower, BookReservation, BorrowRequest, ReturnRequest
+from .models import Book, BorrowRequest, BookReservation, Borrower, ReturnRequest
 from library_users.models import UserProfileinfo
 from .forms import NewBook_form, NewBorrower_form, BarcodeScanForm
 from .email_notifications import EmailNotificationService
@@ -20,6 +20,7 @@ from .tasks import send_welcome_email, send_return_confirmation, send_reservatio
 from .decorators import librarian_required, is_librarian, is_admin
 from django.utils import timezone
 from .reports import LibraryReports
+from .models import Book, BorrowRequest, Category
 
 
 # Create your views here.
@@ -67,38 +68,43 @@ class BooksListView(ListView):
     context_object_name = 'books'
     paginate_by = 20
     ordering = ['title']
-    
+
     def get_queryset(self):
         # Create cache key based on filter parameters
         availability = self.request.GET.get('availability', '')
         language = self.request.GET.get('language', '')
-        cache_key = f'books_list_{availability}_{language}'
-        
+        category_slug = self.request.GET.get('category', '') # Get category slug from request
+        cache_key = f'books_list_{availability}_{language}_{category_slug}'
+
         # Try to get cached queryset
         cached_queryset = cache.get(cache_key)
         if cached_queryset is not None:
             return cached_queryset
-        
+
         queryset = Book.objects.select_related().all()
-        
+
         # Filter by availability
         if availability == 'available':
             queryset = queryset.filter(is_available=True)
         elif availability == 'borrowed':
             queryset = queryset.filter(is_available=False)
-        
+
         # Filter by language
         if language:
             queryset = queryset.filter(language=language)
-        
+
+        # Filter by category
+        if category_slug:
+            queryset = queryset.filter(category__slug=category_slug)
+
         # Cache the queryset for 5 minutes
         cache.set(cache_key, queryset, 60 * 5)
-        
+
         # Advanced search functionality with ranking and multiple search modes
         search_query = self.request.GET.get('q')
         if search_query:
             from django.db.models import Case, When, IntegerField, Value, Count
-            
+
             # Clean and prepare search query
             search_query = search_query.strip()
             search_terms = search_query.split()
@@ -191,9 +197,6 @@ class BooksListView(ListView):
                     low_priority | multi_word_filter | starts_with
                 )
             
-            # Apply search filter
-            queryset = queryset.filter(combined_filter)
-            
             # Add relevance scoring and sorting
             if sort_by == 'relevance' or search_type == 'smart':
                 queryset = queryset.annotate(
@@ -230,11 +233,17 @@ class BooksListView(ListView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['available_count'] = Book.objects.filter(is_available=True).count()
+        context['borrowed_count'] = Book.objects.filter(is_available=False).count()
+        context['categories'] = Category.objects.all().order_by('name') # Add all categories to context
         context['languages'] = Book.LANGUAGE_CHOICES
         context['current_filters'] = {
             'availability': self.request.GET.get('availability', ''),
             'language': self.request.GET.get('language', ''),
+            'category': self.request.GET.get('category', ''),
             'q': self.request.GET.get('q', ''),
+            'search_type': self.request.GET.get('search_type', 'smart'),
+            'sort': self.request.GET.get('sort', 'relevance'),
         }
         return context
 
@@ -1082,10 +1091,9 @@ def reserve_book(request, book_id):
 
 @login_required
 def my_books(request):
-    """Display user's borrowed books, reservations, and borrow requests"""
     user_profile = get_object_or_404(UserProfileinfo, user=request.user)
     
-    borrowed_books = Borrower.objects.filter(
+    current_borrowings = Borrower.objects.filter(
         borrower=user_profile, 
         status='borrowed'
     ).select_related('book')
@@ -1095,30 +1103,33 @@ def my_books(request):
         status='active'
     ).select_related('book')
     
-    # Get borrow requests
     pending_requests = BorrowRequest.objects.filter(
         requester=user_profile,
         status='pending'
     ).select_related('book')
     
-    processed_requests = BorrowRequest.objects.filter(
-        requester=user_profile,
-        status__in=['approved', 'denied']
-    ).select_related('book', 'processed_by').order_by('-processed_date')[:10]
+    borrowing_history = Borrower.objects.filter(borrower=user_profile).exclude(status='borrowed')
     
-    # Calculate overdue count
-    overdue_count = borrowed_books.filter(due_date__lt=date.today()).count()
+    overdue_count = current_borrowings.filter(due_date__lt=timezone.now()).count()
     
     context = {
-        'current_borrowings': borrowed_books,
+        'current_borrowings': current_borrowings,
         'reservations': reservations,
         'pending_requests': pending_requests,
-        'processed_requests': processed_requests,
-        'borrowing_history': borrowed_books,  # For compatibility with template
+        'borrowing_history': borrowing_history,
         'overdue_count': overdue_count,
-        'user_profile': user_profile,
     }
-    
+    print(f"User Profile: {user_profile}")
+    print(f"Borrowed Books: {borrowed_books}")
+    print(f"Reservations: {reservations}")
+    print(f"Pending Borrow Requests: {pending_borrow_requests}")
+
+    context = {
+        'user_profile': user_profile,
+        'borrowed_books': borrowed_books,
+        'reservations': reservations,
+        'pending_borrow_requests': pending_borrow_requests,
+    }
     return render(request, 'books/my_books.html', context)
 
 

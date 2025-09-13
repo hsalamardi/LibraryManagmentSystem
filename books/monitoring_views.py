@@ -10,6 +10,7 @@ import psutil
 import json
 from datetime import datetime, timedelta
 from .audit import AuditLog, SecurityEvent
+from django.utils import timezone
 
 
 @librarian_required
@@ -73,12 +74,12 @@ def security_dashboard(request):
     """Security monitoring dashboard"""
     # Get recent security events
     recent_events = SecurityEvent.objects.filter(
-        timestamp__gte=datetime.now() - timedelta(days=7)
+        timestamp__gte=timezone.now() - timedelta(days=7)
     ).order_by('-timestamp')[:50]
     
     # Get recent audit logs
     recent_audits = AuditLog.objects.filter(
-        timestamp__gte=datetime.now() - timedelta(days=7)
+        timestamp__gte=timezone.now() - timedelta(days=7)
     ).order_by('-timestamp')[:50]
     
     # Get security statistics
@@ -87,18 +88,18 @@ def security_dashboard(request):
         'unresolved_events': SecurityEvent.objects.filter(resolved=False).count(),
         'failed_logins': SecurityEvent.objects.filter(
             event_type='failed_login',
-            timestamp__gte=datetime.now() - timedelta(days=1)
+            timestamp__gte=timezone.now() - timedelta(days=1)
         ).count(),
         'rate_limit_violations': SecurityEvent.objects.filter(
             event_type='rate_limit_exceeded',
-            timestamp__gte=datetime.now() - timedelta(days=1)
+            timestamp__gte=timezone.now() - timedelta(days=1)
         ).count(),
     }
     
     # Get top IP addresses with security events
     from django.db.models import Count
     top_ips = SecurityEvent.objects.filter(
-        timestamp__gte=datetime.now() - timedelta(days=7)
+        timestamp__gte=timezone.now() - timedelta(days=7)
     ).values('ip_address').annotate(
         count=Count('id')
     ).order_by('-count')[:10]
@@ -340,7 +341,7 @@ def export_performance_data(request):
             'system_info': {
                 'python_version': f"{psutil.sys.version_info.major}.{psutil.sys.version_info.minor}",
                 'django_version': getattr(settings, 'DJANGO_VERSION', 'unknown'),
-                'server_time': datetime.now().isoformat(),
+                'server_time': timezone.now().isoformat(),
             }
         }
         

@@ -66,7 +66,7 @@ def user_login(request):
             messages.error(request, 'Please enter both username and password.')
             return render(request, "library_users/login.html", {'username': username})
         
-        user = authenticate(username=username, password=password)
+        user = authenticate(request, username=username, password=password)
         
         if user:
             if user.is_active:
@@ -147,7 +147,7 @@ def user_profile(request):
         # Create a profile if it doesn't exist
         user_profile = UserProfileinfo.objects.create(
             user=request.user,
-            phone='',
+            phone_number='',
             address='',
             status='active'
         )

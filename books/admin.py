@@ -1,9 +1,9 @@
 from import_export.admin import ImportExportModelAdmin
 from django.contrib import admin
-from .models import Book, Borrower, BorrowRequest, ReturnRequest, ThemeConfiguration, ThemePreset
-from .theme_admin import ThemeConfigurationAdmin, ThemePresetAdmin
+from .models import Book, Borrower, BorrowRequest, ReturnRequest, ThemeConfiguration, ThemePreset, Category
 from import_export.admin import ImportExportModelAdmin
-from import_export import resources
+from import_export import resources, fields
+from import_export.widgets import ForeignKeyWidget
 from django.utils.html import format_html
 from django.urls import reverse
 from django.utils import timezone
@@ -13,7 +13,30 @@ from django.utils import timezone
 
 
 class BookResource(resources.ModelResource):
-    
+
+    def get_instance(self, instance_loader, row):
+        # Attempt to find an existing book by serial number
+        try:
+            return self.Meta.model.objects.get(serial=row.get('serial'))
+        except self.Meta.model.DoesNotExist:
+            return None
+
+    class Meta:
+        model = Book
+        fields = (
+            'id', 'title', 'author', 'isbn', 'publisher', 'edition', 'pages', 'language', 'dewey_code',
+            'main_class', 'divisions', 'sections', 'cutter_author', 'volume', 'series', 'editor',
+            'translator', 'publication_date', 'book_summary', 'contents', 'keywords', 'serial',
+            'condition', 'copy_number', 'status', 'borrow_date', 'return_date', 'borrower',
+            'is_approved', 'approved_by', 'approved_date', 'is_returned', 'returned_by',
+            'returned_date', 'is_lost', 'lost_date', 'lost_by', 'is_damaged', 'damaged_date',
+            'damaged_by', 'is_reserved', 'reserved_by', 'is_hidden',
+            'hidden_date', 'hidden_by', 'created_at', 'updated_at'
+        )
+        exclude = ('category',)
+        export_order = fields
+        import_id_fields = ('serial',)
+
     def before_import_row(self, row, **kwargs):
         """Clean and map data before importing"""
         import pandas as pd
@@ -97,42 +120,16 @@ class BookResource(resources.ModelResource):
             row['editor'] = clean_value(row['Editor'])
         if 'Translator' in row:
             row['translator'] = clean_value(row['Translator'])
-        if 'Place_of_Publication' in row:
-            row['place_of_publication'] = clean_value(row['Place_of_Publication'])
-        if 'website' in row:
-            row['website'] = clean_value(row['website'])
-        if 'Source' in row:
-            row['source'] = clean_value(row['Source'])
-        if 'Cover_Type' in row:
-            cover_type = clean_value(row['Cover_Type'])
-            # Map to our choices
-            if cover_type:
-                cover_lower = cover_type.lower()
-                if 'hard' in cover_lower:
-                    row['cover_type'] = 'hardcover'
-                elif 'paper' in cover_lower or 'soft' in cover_lower:
-                    row['cover_type'] = 'paperback'
-                elif 'spiral' in cover_lower:
-                    row['cover_type'] = 'spiral'
-                elif 'digital' in cover_lower:
-                    row['cover_type'] = 'digital'
-                else:
-                    row['cover_type'] = 'paperback'  # Default
-            else:
-                row['cover_type'] = 'paperback'
+        if 'Publication_Date' in row:
+            row['publication_date'] = clean_date(row['Publication_Date'])
         if 'Condition' in row:
             condition = clean_value(row['Condition'])
-            # Map to our choices
             if condition:
                 condition_lower = condition.lower()
-                if 'excellent' in condition_lower:
-                    row['condition'] = 'excellent'
-                elif 'good' in condition_lower:
-                    row['condition'] = 'good'
-                elif 'fair' in condition_lower:
-                    row['condition'] = 'fair'
-                elif 'poor' in condition_lower:
-                    row['condition'] = 'poor'
+                if 'new' in condition_lower:
+                    row['condition'] = 'new'
+                elif 'used' in condition_lower:
+                    row['condition'] = 'used'
                 elif 'damaged' in condition_lower:
                     row['condition'] = 'damaged'
                 else:
@@ -147,150 +144,131 @@ class BookResource(resources.ModelResource):
             row['contents'] = clean_value(row['Contents'])
         if 'Keywords' in row:
             row['keywords'] = clean_value(row['Keywords'])
+        if 'Category' in row:
+            category_name = clean_value(row['Category'])
+            if category_name:
+                category, created = Category.objects.get_or_create(name=category_name)
+                row['category'] = category.id
+            else:
+                row['category'] = None
         if 'Publication_Datte' in row:
             # Handle the typo in the Excel file
             row['publication_date'] = clean_date(row['Publication_Datte'])
         
-        # Handle serial and shelf
-        if 'serial' in row:
-            row['serial'] = str(row['serial']) if row['serial'] and not pd.isna(row['serial']) else ''
-        if 'shelf' in row:
-            row['shelf'] = str(row['shelf']) if row['shelf'] and not pd.isna(row['shelf']) else ''
-            
-        # Set default values for required fields
-        if not row.get('title') or row.get('title') == 'None':
-            row['title'] = 'Unknown Title'
-        if not row.get('author') or row.get('author') == 'None':
-            row['author'] = 'Unknown Author'
-            
-        # Ensure serial is unique and not empty
-        if not row.get('serial') or row.get('serial') == 'None':
-            import time
-            row['serial'] = f"AUTO_{int(time.time())}_{row.get('title', 'book')[:10]}"
-            
-        return row
-    
-    class Meta:
-        model = Book
-        import_id_fields = ('serial',)
-        fields = (
-            'serial', 'shelf', 'title', 'author', 'isbn', 'publisher',
-            'publication_date', 'edition', 'pages', 'language', 'dewey_code',
-            'main_class', 'divisions', 'sections', 'cutter_author', 'volume',
-            'series', 'editor', 'translator', 'place_of_publication', 'website',
-            'source', 'cover_type', 'condition', 'copy_number', 'book_summary',
-            'contents', 'keywords'
-        )
-        skip_unchanged = True
-        report_skipped = True
+        # Set default values for fields not present in the Excel file
+        if 'status' not in row:
+            row['status'] = 'available'
+        if 'borrow_date' not in row:
+            row['borrow_date'] = None
+        if 'return_date' not in row:
+            row['return_date'] = None
+        if 'borrower' not in row:
+            row['borrower'] = None
+        if 'is_approved' not in row:
+            row['is_approved'] = False
+        if 'approved_by' not in row:
+            row['approved_by'] = None
+        if 'approved_date' not in row:
+            row['approved_date'] = None
+        if 'is_returned' not in row:
+            row['is_returned'] = False
+        if 'returned_by' not in row:
+            row['returned_by'] = None
+        if 'returned_date' not in row:
+            row['returned_date'] = None
+        if 'is_lost' not in row:
+            row['is_lost'] = False
+        if 'lost_date' not in row:
+            row['lost_date'] = None
+        if 'lost_by' not in row:
+            row['lost_by'] = None
+        if 'is_damaged' not in row:
+            row['is_damaged'] = False
+        if 'damaged_date' not in row:
+            row['damaged_date'] = None
+        if 'damaged_by' not in row:
+            row['damaged_by'] = None
+        if 'is_reserved' not in row:
+            row['is_reserved'] = False
+        if 'reserved_date' not in row:
+            row['reserved_date'] = None
+        if 'reserved_by' not in row:
+            row['reserved_by'] = None
+        if 'is_hidden' not in row:
+            row['is_hidden'] = False
+        if 'hidden_date' not in row:
+            row['hidden_date'] = None
+        if 'hidden_by' not in row:
+            row['hidden_by'] = None
+        if 'created_at' not in row:
+            row['created_at'] = timezone.now()
+        if 'updated_at' not in row:
+            row['updated_at'] = timezone.now()
 
+        return row
+
+
+@admin.register(Book)
 class BookAdmin(ImportExportModelAdmin):
     resource_class = BookResource
-    list_display = ['title', 'author', 'isbn', 'barcode', 'is_available', 'date_added']
-    list_filter = ['is_available', 'language', 'condition', 'date_added']
-    search_fields = ['title', 'author', 'isbn', 'barcode', 'keywords']
-    readonly_fields = ['date_added', 'last_updated']
-    fieldsets = (
-        ('Basic Information', {
-            'fields': ('serial', 'shelf', 'title', 'author', 'isbn', 'barcode')
-        }),
-        ('Publication Details', {
-            'fields': ('publisher', 'publication_date', 'edition', 'pages', 'language')
-        }),
-        ('Classification', {
-            'fields': ('dewey_code', 'main_class', 'divisions', 'sections', 'cutter_author')
-        }),
-        ('Additional Information', {
-            'fields': ('volume', 'series', 'editor', 'translator', 'place_of_publication', 'website', 'source')
-        }),
-        ('Physical Details', {
-            'fields': ('cover_type', 'condition', 'copy_number', 'cover_image')
-        }),
-        ('Content', {
-            'fields': ('book_summary', 'contents', 'keywords')
-        }),
-        ('Status', {
-            'fields': ('is_available', 'date_added', 'last_updated')
-        }),
+    list_display = (
+        'title', 'author', 'isbn', 'category', 'language', 'is_available', 'date_added', 'last_updated'
     )
+    list_filter = (
+        'category', 'language', 'is_available', 'date_added', 'last_updated'
+    )
+    search_fields = ('title', 'author', 'isbn', 'category__name')
+    actions = ['make_available', 'make_lost', 'make_damaged', 'make_hidden']
 
-admin.site.register(Book, BookAdmin)
+    def make_available(self, request, queryset):
+        queryset.update(is_available=True)
 
-class BorrowerResource(resources.ModelResource):
+    make_available.short_description = "Mark selected books as available"
 
-    class Meta:
-        model = Borrower
+    def make_lost(self, request, queryset):
+        queryset.update(is_available=False) # Assuming lost means not available
 
-class BorrowerAdmin(ImportExportModelAdmin):
-    resource_class = BorrowerResource
-    list_display = ['book', 'borrower', 'borrow_date', 'due_date', 'status', 'fine_amount']
-    list_filter = ['status', 'borrow_date', 'due_date']
-    search_fields = ['book__title', 'borrower__user__username', 'borrower__user__email']
-    readonly_fields = ['borrow_date']
+    make_lost.short_description = "Mark selected books as lost"
 
-admin.site.register(Borrower, BorrowerAdmin)
+    def make_damaged(self, request, queryset):
+        queryset.update(is_available=False) # Assuming damaged means not available
+
+    make_damaged.short_description = "Mark selected books as damaged"
+
+    def make_hidden(self, request, queryset):
+        queryset.update(is_available=False) # Assuming hidden means not available
+
+    make_hidden.short_description = "Mark selected books as hidden"
 
 
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug')
+    search_fields = ('name',)
+
+
+@admin.register(Borrower)
+class BorrowerAdmin(admin.ModelAdmin):
+    list_display = ('book', 'borrower', 'borrow_date', 'due_date', 'status', 'fine_amount')
+    list_filter = ('status', 'borrow_date', 'due_date')
+    search_fields = ('book__title', 'borrower__user__username')
+
+
+@admin.register(BorrowRequest)
 class BorrowRequestAdmin(admin.ModelAdmin):
-    list_display = ['book', 'requester', 'request_date', 'requested_duration_days', 'status', 'processed_by', 'action_buttons']
-    list_filter = ['status', 'request_date', 'processed_date']
-    search_fields = ['book__title', 'requester__user__username', 'requester__user__email']
-    readonly_fields = ['request_date', 'processed_date']
-    fieldsets = (
-        ('Request Information', {
-            'fields': ('book', 'requester', 'request_date', 'requested_duration_days', 'notes')
-        }),
-        ('Status', {
-            'fields': ('status', 'admin_notes', 'processed_by', 'processed_date')
-        }),
-    )
-    
-    def action_buttons(self, obj):
-        if obj.status == 'pending':
-            approve_url = reverse('admin:approve_borrow_request', args=[obj.pk])
-            deny_url = reverse('admin:deny_borrow_request', args=[obj.pk])
-            return format_html(
-                '<a class="button" href="{}">Approve</a>&nbsp;'
-                '<a class="button" href="{}">Deny</a>',
-                approve_url, deny_url
-            )
-        return f"Status: {obj.get_status_display()}"
-    action_buttons.short_description = 'Actions'
-    action_buttons.allow_tags = True
-    
-    def save_model(self, request, obj, form, change):
-        if change and 'status' in form.changed_data:
-            obj.processed_by = request.user.userprofileinfo
-            obj.processed_date = timezone.now()
-        super().save_model(request, obj, form, change)
-
-admin.site.register(BorrowRequest, BorrowRequestAdmin)
+    list_display = ('book', 'requester', 'request_date', 'status', 'processed_date')
+    list_filter = ('status', 'request_date')
+    search_fields = ('book__title', 'requester__user__username')
 
 
+@admin.register(ReturnRequest)
 class ReturnRequestAdmin(admin.ModelAdmin):
-    list_display = ['borrowing', 'requester', 'request_date', 'status', 'processed_by', 'action_buttons']
-    list_filter = ['status', 'request_date', 'processed_date']
-    search_fields = ['borrowing__book__title', 'requester__user__username', 'requester__user__email']
-    readonly_fields = ['request_date', 'processed_date']
-    fieldsets = (
-        ('Request Information', {
-            'fields': ('borrowing', 'requester', 'request_date', 'notes')
-        }),
-        ('Status', {
-            'fields': ('status', 'admin_notes', 'processed_by', 'processed_date')
-        }),
-    )
-    
-    def action_buttons(self, obj):
-        if obj.status == 'pending':
-            return format_html(
-                '<a class="button" href="/return-requests/{}/approve/">Approve</a>&nbsp;'
-                '<a class="button" href="/return-requests/{}/deny/">Deny</a>',
-                obj.pk, obj.pk
-            )
-        return '-'
-    action_buttons.short_description = 'Actions'
-    action_buttons.allow_tags = True
+    list_display = ('borrowing', 'requester', 'request_date', 'status', 'processed_date')
+    list_filter = ('status', 'request_date')
+    search_fields = ('borrowing__book__title', 'requester__user__username')
 
 
-admin.site.register(ReturnRequest, ReturnRequestAdmin)
+# Admin site customizations
+admin.site.site_header = "Library Management System Admin"
+admin.site.site_title = "LMS Admin Portal"
+admin.site.index_title = "Welcome to LMS Admin"

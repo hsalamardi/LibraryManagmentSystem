@@ -2,11 +2,28 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
+from django.utils.text import slugify
 from library_users.models import UserProfileinfo
 from datetime import date, timedelta
 import uuid
 
 # Create your models here.
+
+class Category(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=100, unique=True, blank=True)
+
+    class Meta:
+        verbose_name_plural = "Categories"
+        ordering = ['name']
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
 
 class Book(models.Model):
     CONDITION_CHOICES = [
@@ -40,6 +57,7 @@ class Book(models.Model):
     isbn = models.CharField(max_length=17, unique=True, null=True, blank=True, help_text="ISBN-13 format", db_index=True)
     barcode = models.CharField(max_length=50, unique=True, null=True, blank=True, help_text="Barcode for scanning", db_index=True)
     author = models.CharField(max_length=500, help_text="Primary author(s)", db_index=True)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='books')
     
     # Publication Details
     publisher = models.CharField(max_length=200, null=True, blank=True)

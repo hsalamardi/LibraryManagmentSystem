@@ -127,6 +127,14 @@
                                             </span>
                                         </td>
                                     </tr>
+                                    <tr>
+                                        <td><strong>Categories:</strong></td>
+                                        <td>
+                                            {% for category in book_detail.categories.all %}
+                                                <span class="badge bg-info me-1">{{ category.name }}</span>
+                                            {% endfor %}
+                                        </td>
+                                    </tr>
                                 </table>
                             </div>
                             

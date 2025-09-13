@@ -89,6 +89,11 @@ INSTALLED_APPS = [
     'library_users',
 ]
 
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 # Add debug toolbar for development
 if DEBUG:
     INSTALLED_APPS += ['debug_toolbar']
@@ -138,7 +143,7 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 AXES_ENABLED = True
 AXES_FAILURE_LIMIT = 5
 AXES_COOLOFF_TIME = 1  # 1 hour
-AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True
+# AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True # Deprecated setting
 AXES_RESET_ON_SUCCESS = True
 
 # Sentry Configuration for Error Monitoring
@@ -387,7 +392,7 @@ MEDIA_ROOT = MEDIA_DIR
 #     GS_BUCKET_NAME = env('GS_BUCKET_NAME', default='')
 #     GS_DEFAULT_ACL = 'publicRead'
 
-LOGIN_URL = 'library_users/login/'
+LOGIN_URL = '/library_users/login/'
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 

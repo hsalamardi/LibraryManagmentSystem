@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Books{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">My Books</h1>
+
+    <ul class="nav nav-tabs mb-4" id="myBooksTab" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="borrowed-tab" data-toggle="tab" href="#borrowed" role="tab" aria-controls="borrowed" aria-selected="true">Borrowed Books <span class="badge badge-primary">{{ current_borrowings|length }}</span></a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="reservations-tab" data-toggle="tab" href="#reservations" role="tab" aria-controls="reservations" aria-selected="false">Reservations <span class="badge badge-info">{{ reservations|length }}</span></a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="pending-requests-tab" data-toggle="tab" href="#pending-requests" role="tab" aria-controls="pending-requests" aria-selected="false">Pending Requests <span class="badge badge-warning">{{ pending_requests|length }}</span></a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="processed-requests-tab" data-toggle="tab" href="#processed-requests" role="tab" aria-controls="processed-requests" aria-selected="false">Processed Requests <span class="badge badge-secondary">{{ processed_requests|length }}</span></a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="overdue-tab" data-toggle="tab" href="#overdue" role="tab" aria-controls="overdue" aria-selected="false">Overdue <span class="badge badge-danger">{{ overdue_count }}</span></a>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="myBooksTabContent">
+        <div class="tab-pane fade show active" id="borrowed" role="tabpanel" aria-labelledby="borrowed-tab">
+            <h3>Currently Borrowed Books</h3>
+            {% if current_borrowings %}
+                <div class="row">
+                    {% for borrower_entry in current_borrowings %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100">
+                                <img src="{{ borrower_entry.book.get_cover_image_url }}" class="card-img-top" alt="{{ borrower_entry.book.title }}">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ borrower_entry.book.title }}</h5>
+                                    <p class="card-text"><strong>Author:</strong> {{ borrower_entry.book.author }}</p>
+                                    <p class="card-text"><strong>Borrowed Date:</strong> {{ borrower_entry.borrow_date }}</p>
+                                    <p class="card-text"><strong>Due Date:</strong> {{ borrower_entry.due_date }}</p>
+                                    {% if borrower_entry.is_overdue %}
+                                        <p class="text-danger"><strong>OVERDUE</strong></p>
+                                    {% endif %}
+                                    <a href="{% url 'book_detail' borrower_entry.book.pk %}" class="btn btn-primary">View Details</a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>You have not borrowed any books yet.</p>
+            {% endif %}
+        </div>
+
+        <div class="tab-pane fade" id="reservations" role="tabpanel" aria-labelledby="reservations-tab">
+            <h3>Your Active Reservations</h3>
+            {% if reservations %}
+                <ul class="list-group">
+                    {% for reservation in reservations %}
+                        <li class="list-group-item">
+                            <strong>{{ reservation.book.title }}</strong> by {{ reservation.book.author }} (Reserved on: {{ reservation.reservation_date }})
+                            <a href="{% url 'book_detail' reservation.book.pk %}" class="btn btn-sm btn-info float-right">View Book</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>You have no active book reservations.</p>
+            {% endif %}
+        </div>
+
+        <div class="tab-pane fade" id="pending-requests" role="tabpanel" aria-labelledby="pending-requests-tab">
+            <h3>Your Pending Borrow Requests</h3>
+            {% if pending_requests %}
+                <ul class="list-group">
+                    {% for request in pending_requests %}
+                        <li class="list-group-item">
+                            <strong>{{ request.book.title }}</strong> by {{ request.book.author }} (Requested on: {{ request.request_date }})
+                            <a href="{% url 'book_detail' request.book.pk %}" class="btn btn-sm btn-info float-right">View Book</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>You have no pending borrow requests.</p>
+            {% endif %}
+        </div>
+
+        <div class="tab-pane fade" id="processed-requests" role="tabpanel" aria-labelledby="processed-requests-tab">
+            <h3>Your Processed Borrow Requests (Last 10)</h3>
+            {% if processed_requests %}
+                <ul class="list-group">
+                    {% for request in processed_requests %}
+                        <li class="list-group-item">
+                            <strong>{{ request.book.title }}</strong> by {{ request.book.author }} ({{ request.status|capfirst }} on: {{ request.processed_date }})
+                            <a href="{% url 'book_detail' request.book.pk %}" class="btn btn-sm btn-info float-right">View Book</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>You have no processed borrow requests.</p>
+            {% endif %}
+        </div>
+
+        <div class="tab-pane fade" id="overdue" role="tabpanel" aria-labelledby="overdue-tab">
+            <h3>Overdue Books</h3>
+            {% if current_borrowings %}
+                <div class="row">
+                    {% for borrower_entry in current_borrowings %}
+                        {% if borrower_entry.is_overdue %}
+                            <div class="col-md-4 mb-4">
+                                <div class="card h-100 border-danger">
+                                    <img src="{{ borrower_entry.book.get_cover_image_url }}" class="card-img-top" alt="{{ borrower_entry.book.title }}">
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ borrower_entry.book.title }}</h5>
+                                        <p class="card-text"><strong>Author:</strong> {{ borrower_entry.book.author }}</p>
+                                        <p class="card-text"><strong>Borrowed Date:</strong> {{ borrower_entry.borrow_date }}</p>
+                                        <p class="card-text"><strong>Due Date:</strong> {{ borrower_entry.due_date }}</p>
+                                        <p class="text-danger"><strong>OVERDUE</strong></p>
+                                        <a href="{% url 'book_detail' borrower_entry.book.pk %}" class="btn btn-primary">View Details</a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>No overdue books.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,4 +1,4 @@
-{% extends 'landing_page.html' %}
+{% extends 'library_users/base.html' %}
 {% load static %}
 {% load math_filters %}
 
@@ -463,6 +463,8 @@
 
 <!-- Chart.js and Dashboard JavaScript -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+</script>
+{% endblock %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Borrowing Trends Chart
@@ -471,10 +473,10 @@ document.addEventListener('DOMContentLoaded', function() {
         new Chart(borrowingCtx, {
             type: 'line',
             data: {
-                labels: {{ borrowing_months|safe }},
+                labels: JSON.parse({{ borrowing_months|safe }}),
                 datasets: [{
                     label: 'Books Borrowed',
-                    data: {{ borrowing_data|safe }},
+                    data: JSON.parse({{ borrowing_data|safe }}),
                     borderColor: 'rgb(59, 130, 246)',
                     backgroundColor: 'rgba(59, 130, 246, 0.1)',
                     borderWidth: 3,
@@ -555,25 +557,7 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .table-hover tbody tr:hover {
-    background-color: var(--secondary-50);
-}
 
-.feature-icon {
-    background: var(--primary-600);
-}
-
-@media (max-width: 768px) {
-    .chart-container {
-        height: 250px !important;
-    }
-    
-    .table-responsive {
-        max-height: 300px;
-    }
-}
-</style>
-
-{% endblock %}
 
 
         </div>
@@ -1372,8 +1356,6 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 {% endif %}
-{% endblock %}
-
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
@@ -1386,10 +1368,10 @@ const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
 const monthlyChart = new Chart(monthlyCtx, {
     type: 'line',
     data: {
-        labels: {{ chart_data.monthly_borrowings|safe }}.map(item => item.month),
+        labels: JSON.parse({{ chart_data.monthly_borrowings|safe }}).map(item => item.month),
         datasets: [{
             label: 'Borrowings',
-            data: {{ chart_data.monthly_borrowings|safe }}.map(item => item.borrowings),
+            data: JSON.parse({{ chart_data.monthly_borrowings|safe }}).map(item => item.borrowings),
             borderColor: 'rgb(102, 126, 234)',
             backgroundColor: 'rgba(102, 126, 234, 0.1)',
             tension: 0.4,
@@ -1400,7 +1382,7 @@ const monthlyChart = new Chart(monthlyCtx, {
             pointRadius: 6
         }, {
             label: 'Returns',
-            data: {{ chart_data.monthly_borrowings|safe }}.map(item => item.returns),
+            data: JSON.parse({{ chart_data.monthly_borrowings|safe }}).map(item => item.returns),
             borderColor: 'rgb(40, 167, 69)',
             backgroundColor: 'rgba(40, 167, 69, 0.1)',
             tension: 0.4,
@@ -1411,7 +1393,7 @@ const monthlyChart = new Chart(monthlyCtx, {
             pointRadius: 6
         }, {
             label: 'New Users',
-            data: {{ chart_data.monthly_borrowings|safe }}.map(item => item.new_users || 0),
+            data: JSON.parse({{ chart_data.monthly_borrowings|safe }}).map(item => item.new_users || 0),
             borderColor: 'rgb(255, 193, 7)',
             backgroundColor: 'rgba(255, 193, 7, 0.1)',
             tension: 0.4,
@@ -1422,7 +1404,7 @@ const monthlyChart = new Chart(monthlyCtx, {
             pointRadius: 4
         }, {
             label: 'New Books',
-            data: {{ chart_data.monthly_borrowings|safe }}.map(item => item.new_books || 0),
+            data: JSON.parse({{ chart_data.monthly_borrowings|safe }}).map(item => item.new_books || 0),
             borderColor: 'rgb(220, 53, 69)',
             backgroundColor: 'rgba(220, 53, 69, 0.1)',
             tension: 0.4,
@@ -1491,9 +1473,9 @@ const languageCtx = document.getElementById('languageChart').getContext('2d');
 const languageChart = new Chart(languageCtx, {
     type: 'doughnut',
     data: {
-        labels: {{ chart_data.books_by_language|safe }}.map(item => item.language),
+        labels: JSON.parse({{ chart_data.books_by_language|safe }}).map(item => item.language),
         datasets: [{
-            data: {{ chart_data.books_by_language|safe }}.map(item => item.count),
+            data: JSON.parse({{ chart_data.books_by_language|safe }}).map(item => item.count),
             backgroundColor: [
                 '#667eea',
                 '#764ba2', 
@@ -1534,10 +1516,10 @@ const languageChart = new Chart(languageCtx, {
  const categoryChart = new Chart(categoryCtx, {
      type: 'bar',
      data: {
-         labels: {{ chart_data.books_by_category|safe }}.map(item => item.main_class || 'Unknown'),
+         labels: JSON.parse({{ chart_data.books_by_category|safe }}).map(item => item.main_class || 'Unknown'),
          datasets: [{
              label: 'Books',
-             data: {{ chart_data.books_by_category|safe }}.map(item => item.count),
+             data: JSON.parse({{ chart_data.books_by_category|safe }}).map(item => item.count),
             backgroundColor: 'rgba(102, 126, 234, 0.8)',
             borderColor: 'rgb(102, 126, 234)',
             borderWidth: 1,
@@ -1549,7 +1531,7 @@ const languageChart = new Chart(languageCtx, {
         maintainAspectRatio: false,
         plugins: {
             legend: {
-                display: false
+                 display: false
             },
             tooltip: {
                 backgroundColor: 'rgba(0,0,0,0.8)',
@@ -1581,10 +1563,10 @@ const languageChart = new Chart(languageCtx, {
  const authorsChart = new Chart(authorsCtx, {
      type: 'bar',
      data: {
-         labels: {{ chart_data.popular_authors|safe }}.map(item => item.author || 'Unknown'),
+         labels: JSON.parse({{ chart_data.popular_authors|safe }}).map(item => item.author || 'Unknown'),
          datasets: [{
              label: 'Borrowed Books',
-             data: {{ chart_data.popular_authors|safe }}.map(item => item.borrow_count),
+             data: JSON.parse({{ chart_data.popular_authors|safe }}).map(item => item.borrow_count),
             backgroundColor: 'rgba(40, 167, 69, 0.8)',
             borderColor: 'rgb(40, 167, 69)',
             borderWidth: 1
@@ -1625,10 +1607,10 @@ const languageChart = new Chart(languageCtx, {
  const weeklyChart = new Chart(weeklyCtx, {
      type: 'bar',
      data: {
-         labels: {{ chart_data.weekly_activity|safe }}.map(item => item.week),
+         labels: JSON.parse({{ chart_data.weekly_activity|safe }}).map(item => item.week),
          datasets: [{
              label: 'Borrowings',
-             data: {{ chart_data.weekly_activity|safe }}.map(item => item.borrowings),
+             data: JSON.parse({{ chart_data.weekly_activity|safe }}).map(item => item.borrowings),
             backgroundColor: [
                 'rgba(102, 126, 234, 0.8)',
                 'rgba(40, 167, 69, 0.8)',
@@ -1674,9 +1656,9 @@ const languageChart = new Chart(languageCtx, {
  const conditionsChart = new Chart(conditionsCtx, {
      type: 'pie',
      data: {
-         labels: {{ chart_data.book_conditions|safe }}.map(item => item.condition || 'Unknown'),
+         labels: JSON.parse({{ chart_data.book_conditions|safe }}).map(item => item.condition || 'Unknown'),
          datasets: [{
-             data: {{ chart_data.book_conditions|safe }}.map(item => item.count),
+             data: JSON.parse({{ chart_data.book_conditions|safe }}).map(item => item.count),
             backgroundColor: [
                 '#28a745',
                 '#ffc107',
@@ -1712,10 +1694,10 @@ const languageChart = new Chart(languageCtx, {
  const trendsChart = new Chart(trendsCtx, {
      type: 'line',
      data: {
-         labels: {{ chart_data.reading_trends|safe }}.map(item => item.month),
+         labels: JSON.parse({{ chart_data.reading_trends|safe }}).map(item => item.month),
          datasets: [{
              label: 'Books Borrowed',
-             data: {{ chart_data.reading_trends|safe }}.map(item => item.count),
+             data: JSON.parse({{ chart_data.reading_trends|safe }}).map(item => item.count),
             borderColor: 'rgb(102, 126, 234)',
             backgroundColor: 'rgba(102, 126, 234, 0.1)',
             tension: 0.4,

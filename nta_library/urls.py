@@ -19,6 +19,7 @@ from django.http import JsonResponse
 from django.conf import settings
 from django.conf.urls import include
 from django.conf.urls.static import static
+from django.views.static import serve
 from django.urls import path
 from django.db import connection
 from django.core.cache import cache
@@ -65,7 +66,14 @@ urlpatterns = [
     # API documentation redirect
     path('api-docs/', RedirectView.as_view(url='/api/v1/', permanent=False)),
     # path('forest', include('django_forest.urls')),  # Commented out - missing dependency
+    path('sw.js', serve, {'document_root': settings.BASE_DIR, 'path': 'sw.js'}),
 ]
+
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns = [
+        path('__debug__/', include(debug_toolbar.urls)),
+    ] + urlpatterns
 
 admin.site.site_header = settings.ADMIN_SITE_HEADER
 admin.site.site_title = settings.ADMIN_SITE_TITLE

@@ -622,3 +622,11 @@ body {
         border: 1px solid #ccc;
     }
 }
+.navbar {
+  opacity: 0.4; /* 60% transparent */
+  transition: opacity 0.3s ease-in-out;
+}
+
+.navbar:hover {
+  opacity: 1; /* Fully opaque on hover */
+}
