@@ -257,6 +257,9 @@ class BooksDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         book = self.get_object()
+        context['book_detail'] = book
+        context['borrowing_history'] = book.borrowings.all().order_by('-borrow_date')
+        return context
         
         # Check if user can borrow this book
         if hasattr(self.request.user, 'userprofileinfo'):

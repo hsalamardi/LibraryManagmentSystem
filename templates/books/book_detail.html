@@ -331,6 +331,25 @@
             </div>
         </div>
         {% endif %}
+            </div>
+            <div class="card mb-3">
+                <div class="card-header">Borrowing History</div>
+                <div class="card-body">
+                    {% if borrowing_history %}
+                        <ul class="list-group list-group-flush">
+                            {% for borrowing in borrowing_history %}
+                                <li class="list-group-item">
+                                    <strong>Borrower:</strong> {{ borrowing.borrower.user.username }}<br>
+                                    <strong>Borrowed Date:</strong> {{ borrowing.borrow_date }}<br>
+                                    <strong>Return Date:</strong> {% if borrowing.return_date %}{{ borrowing.return_date }}{% else %}Still borrowed{% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p>No borrowing history available for this book.</p>
+                    {% endif %}
+                </div>
+            </div>
     </div>
             </body>
         {% endblock  %}

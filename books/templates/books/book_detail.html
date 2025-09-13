@@ -33,6 +33,10 @@
                     <p><strong>Cover Type:</strong> {{ book.cover_type }}</p>
                     <p><strong>Condition:</strong> {{ book.condition }}</p>
                     <p><strong>Copy Number:</strong> {{ book.copy_number }}</p>
+                    {% if book.cover_image %}
+                    <p><strong>Cover Image:</strong> <img src="{{ book.cover_image.url }}" alt="Book Cover" style="max-width: 200px;"></p>
+                    {% endif %}
+                    <p><strong>Available:</strong> {{ book.is_available|yesno:"Yes,No" }}</p>
                     <p><strong>Status:</strong> {{ book.status }}</p>
                     <p><strong>Category:</strong> {{ book.category }}</p>
                     

@@ -51,10 +51,10 @@ class Book(models.Model):
     ]
     
     # Basic Information
-    serial = models.CharField(max_length=20, unique=True, help_text="Unique serial number for the book")
+    serial = models.CharField(max_length=20, help_text="Unique serial number for the book")
     shelf = models.CharField(max_length=20, help_text="Shelf location", db_index=True)
     title = models.CharField(max_length=500, help_text="Book title", db_index=True)
-    isbn = models.CharField(max_length=17, unique=True, null=True, blank=True, help_text="ISBN-13 format", db_index=True)
+    isbn = models.CharField(max_length=17, null=True, blank=True, help_text="ISBN-13 format", db_index=True)
     barcode = models.CharField(max_length=50, unique=True, null=True, blank=True, help_text="Barcode for scanning", db_index=True)
     author = models.CharField(max_length=500, help_text="Primary author(s)", db_index=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='books')
